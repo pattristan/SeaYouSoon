@@ -29,6 +29,23 @@
 		58A64AA93020B2D400FB9992 /* Sea you soonUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Sea you soonUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		582BB4D4302B298E000E42BD /* Exceptions for "Sea you soonUITests" folder in "Sea you soon" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				LogoIcon.icon,
+			);
+			target = 58A64A8F3020B2D200FB9992 /* Sea you soon */;
+		};
+		582BB4D5302B298E000E42BD /* Exceptions for "Sea you soonUITests" folder in "Sea you soonTests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				LogoIcon.icon,
+			);
+			target = 58A64A9E3020B2D300FB9992 /* Sea you soonTests */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		58A64A923020B2D200FB9992 /* Sea you soon */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
@@ -42,6 +59,10 @@
 		};
 		58A64AAC3020B2D400FB9992 /* Sea you soonUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				582BB4D4302B298E000E42BD /* Exceptions for "Sea you soonUITests" folder in "Sea you soon" target */,
+				582BB4D5302B298E000E42BD /* Exceptions for "Sea you soonUITests" folder in "Sea you soonTests" target */,
+			);
 			path = "Sea you soonUITests";
 			sourceTree = "<group>";
 		};
@@ -400,6 +421,7 @@
 				DEVELOPMENT_TEAM = 248A7BE54Q;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -432,6 +454,7 @@
 				DEVELOPMENT_TEAM = 248A7BE54Q;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
