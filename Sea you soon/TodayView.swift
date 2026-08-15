@@ -58,7 +58,10 @@ struct TodayView: View {
 
     // MARK: - Ship time
 
-    private var shipTimeString: String? {
+    /// The offset the ship's clocks are actually set to today — including the
+    /// hour-by-hour drift across sea days. The single source of truth for the
+    /// on-board time AND the "clocks are X ahead/behind" sentence.
+    private var shipOffsetHours: Int? {
         guard let current = currentFinding else { return nil }
         let offsetHours: Int
         if current.isAtSea,
@@ -91,8 +94,12 @@ struct TodayView: View {
         } else {
             offsetHours = ShipTime.timezoneOffset(for: current)
         }
+        return offsetHours
+    }
 
-        guard let tz = TimeZone(secondsFromGMT: offsetHours * 3600) else { return nil }
+    private var shipTimeString: String? {
+        guard let offsetHours = shipOffsetHours,
+              let tz = TimeZone(secondsFromGMT: offsetHours * 3600) else { return nil }
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm"
         formatter.timeZone = tz
@@ -478,8 +485,10 @@ struct TodayView: View {
     }()
 
     private var timeDifferenceSentence: String {
-        guard let current = currentFinding else { return "" }
-        let shipMin = ShipTime.timezoneOffset(for: current) * 60
+        // Same offset that drives the big clock — including sea-day drift —
+        // so the sentence can never contradict the numbers above it.
+        guard let offset = shipOffsetHours else { return "" }
+        let shipMin = offset * 60
         let viewerMin = TimeZone.current.secondsFromGMT() / 60
         let diff = shipMin - viewerMin
         if diff == 0 { return "The ship's clocks match yours exactly." }
