@@ -62,7 +62,7 @@ struct SettingsView: View {
                             if crewSetup.isGuest {
                                 @Bindable var crewSetup = crewSetup
                                 Toggle(isOn: $crewSetup.isCrew) {
-                                    Label("I work aboard this ship", systemImage: "person.badge.shield.checkmark")
+                                    Label("I am working aboard this ship", systemImage: "person.badge.shield.checkmark")
                                         .foregroundStyle(Color.oceanInk)
                                 }
                                 .tint(.teal)

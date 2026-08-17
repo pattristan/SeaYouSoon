@@ -263,9 +263,15 @@ struct TodayView: View {
                     Button {
                         showWebcam = true
                     } label: {
-                      
-                        Image(systemName: "video")
-                        Text("live")
+                        // Crew are ON the ship — the webcam is out the window.
+                        // They get the crew portal instead.
+                        if crewSetup.isCrew {
+                            Image(systemName: "person.crop.rectangle")
+                            Text("Portal")
+                        } else {
+                            Image(systemName: "video")
+                            Text("live")
+                        }
                     }
                 }
             }
@@ -283,7 +289,9 @@ struct TodayView: View {
                 ReturnShipChip()
             }
             .navigationDestination(isPresented: $showList) { CruiseListView() }
-            .navigationDestination(isPresented: $showWebcam) { WebcamView() }
+            .navigationDestination(isPresented: $showWebcam) {
+                if crewSetup.isCrew { CrewPortalView() } else { WebcamView() }
+            }
             .sheet(isPresented: $showSettings) { SettingsView() }
             .sheet(isPresented: $showTimeInfo) {
                 timeInfoSheet.presentationDetents([.height(320)])
