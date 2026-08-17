@@ -24,6 +24,7 @@ struct TodayView: View {
     @State private var showSettings = false
     @State private var showTimeInfo = false
     @State private var showProgress = false
+    @State private var showWeather = false
 
     private static let dayFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -290,6 +291,9 @@ struct TodayView: View {
             .sheet(isPresented: $showProgress) {
                 progressSheet.presentationDetents([.height(340)])
             }
+            .sheet(isPresented: $showWeather) {
+                weatherSheet.presentationDetents([.height(360)])
+            }
             .onAppear { getTheDay() }
             .onChange(of: scenePhase) { if scenePhase == .active { getTheDay() } }
             .onChange(of: fleetData.findings) { getTheDay() }
@@ -305,7 +309,7 @@ struct TodayView: View {
         GeometryReader { geo in
             let isRegular = horizontalSizeClass == .regular
             let contentWidth = isRegular ? min(geo.size.width * 0.85, 700) : min(geo.size.width - 40, 340)
-            let imageHeight = isRegular ? contentWidth * 0.7 : 250.0
+            let imageHeight = isRegular ? contentWidth * 0.7 : 300.0
 //            let mapHeight = isRegular ? contentWidth * 0.65 : 300.0
 
             if contentWidth > 0 {
@@ -369,23 +373,29 @@ struct TodayView: View {
                             }
                             .buttonStyle(.plain)
 
-                            // Ship time + weather tile — tap for the time-zone story
+                            // Ship time tile — tap for the time-zone story
                             if let time = shipTimeString {
-                                HStack(spacing: 12) {
-                                    Text("current time on board: \(time)")
-                                    if let info = weatherService.weatherInfo, let temp = weatherService.temperature {
-                                        HStack(spacing: 4) {
-                                            Image(systemName: info.icon).symbolRenderingMode(.multicolor)
-                                            Text("\(String(format: "%.0f", temp))° \(info.description)")
-                                        }
-                                    }
+                                Text("current time on board: \(time)")
+                                    .font(.custom("NY", size: isRegular ? 18 : 14))
+                                    .foregroundStyle(Color.oceanInk)
+                                    .padding(.vertical, 12)
+                                    .frame(width: contentWidth * 0.92)
+                                    .glassEffect(.regular.interactive(), in: .capsule)
+                                    .onTapGesture { showTimeInfo = true }
+                            }
+
+                            // Weather tile — tap for the full conditions
+                            if let info = weatherService.weatherInfo, let temp = weatherService.temperature {
+                                HStack(spacing: 4) {
+                                    Image(systemName: info.icon).symbolRenderingMode(.multicolor)
+                                    Text("weather: \(String(format: "%.0f", temp))° \(info.description)")
                                 }
                                 .font(.custom("NY", size: isRegular ? 18 : 14))
                                 .foregroundStyle(Color.oceanInk)
                                 .padding(.vertical, 12)
                                 .frame(width: contentWidth * 0.92)
                                 .glassEffect(.regular.interactive(), in: .capsule)
-                                .onTapGesture { showTimeInfo = true }
+                                .onTapGesture { showWeather = true }
                             }
 
                             // Countdown tile — tap for the voyage progress
@@ -496,6 +506,68 @@ struct TodayView: View {
         let span = m == 0 ? "\(h) hour\(h == 1 ? "" : "s")" : "\(h) h \(m) min"
         let direction = diff > 0 ? "ahead of" : "behind"
         return "The ship's clocks are \(span) \(direction) yours. Ships adjust their clocks overnight as they sail between time zones."
+    }
+
+    /// Tap on the weather capsule: the full conditions at the ship's position.
+    private var weatherSheet: some View {
+        ZStack {
+            OceanBackground()
+            VStack(spacing: 12) {
+                Text(currentFinding.map { $0.isAtSea ? "Weather at sea" : "Weather in \($0.location)" }
+                     ?? "Weather at the ship")
+                    .font(.custom("NY", size: 24)).fontWeight(.bold)
+
+                if let info = weatherService.weatherInfo {
+                    Image(systemName: info.icon)
+                        .symbolRenderingMode(.multicolor)
+                        .font(.system(size: 56))
+
+                    if let temp = weatherService.temperature {
+                        Text("\(String(format: "%.0f", temp))°")
+                            .font(.system(size: 54, weight: .bold, design: .rounded))
+                    }
+
+                    Text(info.description)
+                        .font(.custom("NY", size: 18))
+
+                    HStack(spacing: 22) {
+                        if let feels = weatherService.apparentTemperature {
+                            weatherFact(icon: "thermometer.medium",
+                                        value: "\(String(format: "%.0f", feels))°",
+                                        label: "feels like")
+                        }
+                        if let wind = weatherService.windSpeed {
+                            weatherFact(icon: "wind",
+                                        value: "\(String(format: "%.0f", wind)) km/h",
+                                        label: "wind")
+                        }
+                        if let humidity = weatherService.humidity {
+                            weatherFact(icon: "humidity.fill",
+                                        value: "\(humidity) %",
+                                        label: "humidity")
+                        }
+                    }
+                    .padding(.top, 6)
+                } else {
+                    ProgressView().padding(.vertical, 30)
+                }
+            }
+            .foregroundStyle(Color.oceanInk)
+            .padding()
+        }
+        .contentShape(Rectangle())
+        .onTapGesture { showWeather = false }
+        .overlay(alignment: .topTrailing) {
+            dismissCheck { showWeather = false }
+        }
+    }
+
+    private func weatherFact(icon: String, value: String, label: String) -> some View {
+        VStack(spacing: 3) {
+            Image(systemName: icon).symbolRenderingMode(.multicolor)
+            Text(value).font(.custom("NY", size: 15)).fontWeight(.semibold)
+            Text(label).font(.caption2).opacity(0.65)
+        }
     }
 
     /// Tap on the countdown: the voyage progress.

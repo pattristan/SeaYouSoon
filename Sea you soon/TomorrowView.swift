@@ -61,7 +61,7 @@ struct TomorrowView: View {
                                     DestinationDetailView(finding: finding)
                                 } label: {
                                     VStack(spacing: 14) {
-                                        LocationImageView(finding: finding, width: 320, height: 220)
+                                        LocationImageView(finding: finding, width: 350, height: 350)
                                             .clipShape(RoundedRectangle(cornerRadius: 17))
                                             .shadow(color: .black.opacity(0.25), radius: 12, y: 6)
 

@@ -11,6 +11,9 @@ import Foundation
 class WeatherService {
     var temperature: Double?
     var weatherCode: Int?
+    var apparentTemperature: Double?
+    var windSpeed: Double?          // km/h
+    var humidity: Int?              // %
 
     private var lastFetchedCoords: String?
 
@@ -24,7 +27,7 @@ class WeatherService {
         let coordKey = "\(latitude),\(longitude)"
         guard coordKey != lastFetchedCoords else { return }
 
-        let urlString = "https://api.open-meteo.com/v1/forecast?latitude=\(latitude)&longitude=\(longitude)&current=temperature_2m,weather_code"
+        let urlString = "https://api.open-meteo.com/v1/forecast?latitude=\(latitude)&longitude=\(longitude)&current=temperature_2m,weather_code,apparent_temperature,wind_speed_10m,relative_humidity_2m"
         guard let url = URL(string: urlString) else { return }
 
         do {
@@ -33,6 +36,9 @@ class WeatherService {
             await MainActor.run {
                 self.temperature = response.current.temperature_2m
                 self.weatherCode = response.current.weather_code
+                self.apparentTemperature = response.current.apparent_temperature
+                self.windSpeed = response.current.wind_speed_10m
+                self.humidity = response.current.relative_humidity_2m
                 self.lastFetchedCoords = coordKey
             }
         } catch {
@@ -68,5 +74,8 @@ private struct OpenMeteoResponse: Codable {
     struct CurrentWeather: Codable {
         let temperature_2m: Double
         let weather_code: Int
+        let apparent_temperature: Double?
+        let wind_speed_10m: Double?
+        let relative_humidity_2m: Int?
     }
 }

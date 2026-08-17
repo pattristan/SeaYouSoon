@@ -27,17 +27,23 @@ class FleetData {
             // Shipyard calls (refits, e.g. "Yard (Marseille)") aren't encounters.
             if f.location.localizedCaseInsensitiveContains("yard (") { continue }
             if let ship = f.ship {
-                index["\(f.OnThisDay)|\(f.location)", default: []].append(ship)
+                index["\(f.OnThisDay)|\(Self.portCity(f.location))", default: []].append(ship)
             }
         }
         portIndex = index
+    }
+
+    /// "Hamburg - Steinwerder" and "Hamburg - Altona" are the same city for
+    /// meeting purposes — a ship visit across the Elbe still counts.
+    private static func portCity(_ location: String) -> String {
+        location.components(separatedBy: " - ").first ?? location
     }
 
     /// Sister ships sharing this port on this day (excluding the stop's own ship).
     /// The photo opportunity for guests — and the ship visit for crew.
     func sisterShips(at stop: Finding) -> [String] {
         guard !stop.isAtSea else { return [] }
-        let ships = portIndex["\(stop.OnThisDay)|\(stop.location)"] ?? []
+        let ships = portIndex["\(stop.OnThisDay)|\(Self.portCity(stop.location))"] ?? []
         return ships.filter { $0 != stop.ship }.sorted()
     }
 

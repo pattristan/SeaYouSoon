@@ -7,6 +7,7 @@
 //  descendant of Finding Patrick's FindingDetail.
 //
 
+import MapKit
 import SwiftUI
 
 struct DestinationDetailView: View {
@@ -48,7 +49,8 @@ struct DestinationDetailView: View {
 
             ScrollView {
                 VStack(spacing: 0) {
-                    MapView(coordinate: finding.locationCoordinate)
+                    MapView(coordinate: finding.locationCoordinate,
+                            markerTitle: finding.ship ?? "")
                         .frame(height: horizontalSizeClass == .regular ? 400 : 300)
                         .clipShape(RoundedRectangle(cornerRadius: 17))
                         .shadow(color: .black.opacity(0.2), radius: 10, y: 5)
@@ -77,11 +79,13 @@ struct DestinationDetailView: View {
                             }
                             Spacer()
                             Button {
-                                let c = finding.coordinates
-                                if let url = URL(string: "maps://?daddr=\(c.latitude),\(c.longitude)"),
-                                   UIApplication.shared.canOpenURL(url) {
-                                    UIApplication.shared.open(url)
-                                }
+                                // Open Maps showing the ship's position as a named
+                                // pin — not directions from the viewer (who may be
+                                // an ocean away). Maps offers directions on demand.
+                                let item = MKMapItem(placemark: MKPlacemark(coordinate: finding.locationCoordinate))
+                                let place = finding.isAtSea ? "at sea" : finding.location
+                                item.name = finding.ship.map { "\($0) — \(place)" } ?? place
+                                item.openInMaps()
                             } label: {
                                 Label("Maps", systemImage: "arrow.triangle.turn.up.right.circle.fill")
                                     .font(.custom("NY", size: 16))
