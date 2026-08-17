@@ -40,7 +40,7 @@ struct CrewPortalView: View {
         // GLADIS — Global Learning And Development Information System:
         // the online training courses (first aid, lifeboat loading, cyber
         // security …), doable aboard or at home before embarkation.
-        case .gladis: return URL(string: "https://cmg.marineis.com")
+        case .gladis: return URL(string: "https://cmg.marinels.com")
         }
     }
 
