@@ -22,7 +22,7 @@ struct CrewPortalView: View {
     @Environment(CrewSetup.self) var crewSetup
 
     private enum Portal: String, CaseIterable, Identifiable {
-        case ship, fleet
+        case ship, fleet, gladis
         var id: String { rawValue }
     }
 
@@ -35,8 +35,12 @@ struct CrewPortalView: View {
 
     private var url: URL? {
         switch portal {
-        case .ship:  return URL(string: "https://crewportal.\(shipSlug).aida.de")
-        case .fleet: return URL(string: "https://crewportal.aida.de")
+        case .ship:   return URL(string: "https://crewportal.\(shipSlug).aida.de")
+        case .fleet:  return URL(string: "https://crewportal.aida.de")
+        // GLADIS — Global Learning And Development Information System:
+        // the online training courses (first aid, lifeboat loading, cyber
+        // security …), doable aboard or at home before embarkation.
+        case .gladis: return URL(string: "https://cmg.marineis.com")
         }
     }
 
@@ -57,8 +61,9 @@ struct CrewPortalView: View {
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .top) {
             Picker("Portal", selection: $portal) {
-                Text("On board · \(crewSetup.shipName)").tag(Portal.ship)
-                Text("Fleet portal").tag(Portal.fleet)
+                Text("on board").tag(Portal.ship)
+                Text("at home").tag(Portal.fleet)
+                Text("GLADIS").tag(Portal.gladis)
             }
             .pickerStyle(.segmented)
             .padding(.horizontal, 16)
