@@ -91,6 +91,25 @@ struct TomorrowView: View {
                                                 .opacity(0.8)
                                                 .italic()
                                                 .multilineTextAlignment(.center)
+
+                                            if crewSetup.isCrew {
+                                                if finding.isTender {
+                                                    Label("At anchor — tender port", systemImage: "anchor")
+                                                        .font(.custom("NY", size: 13))
+                                                        .fontWeight(.semibold)
+                                                        .foregroundStyle(.orange)
+                                                } else if let pier = finding.pier {
+                                                    Label(pier, systemImage: "mappin.and.ellipse")
+                                                        .font(.custom("NY", size: 12))
+                                                        .opacity(0.75)
+                                                }
+                                                if let tc = finding.timeChange {
+                                                    Label(TodayView.clockChangeText(tc), systemImage: "clock.arrow.2.circlepath")
+                                                        .font(.custom("NY", size: 12))
+                                                        .fontWeight(.semibold)
+                                                        .foregroundStyle(.indigo)
+                                                }
+                                            }
                                         }
                                         .foregroundStyle(Color.oceanInk)
                                         .padding(.horizontal, 32)

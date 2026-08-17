@@ -58,6 +58,19 @@ struct SettingsView: View {
                             .glassEffect(.regular, in: .rect(cornerRadius: 20))
                             .padding(.horizontal, 4)
 
+                            // Crew self-declaration: unlocks berth/tender/clock info.
+                            if crewSetup.isGuest {
+                                @Bindable var crewSetup = crewSetup
+                                Toggle(isOn: $crewSetup.isCrew) {
+                                    Label("I work aboard this ship", systemImage: "person.badge.shield.checkmark")
+                                        .foregroundStyle(Color.oceanInk)
+                                }
+                                .tint(.teal)
+                                .padding(.horizontal, 18).padding(.vertical, 12)
+                                .glassEffect(.regular, in: .rect(cornerRadius: 16))
+                                .padding(.horizontal, 4)
+                            }
+
                             // Guest mode: switch ship/dates without starting over —
                             // e.g. a seafarer checking the route of a new offer.
                             if crewSetup.isGuest {

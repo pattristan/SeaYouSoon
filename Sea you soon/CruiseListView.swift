@@ -12,6 +12,7 @@ import SwiftUI
 
 struct CruiseListView: View {
     @Environment(FleetData.self) var fleetData
+    @Environment(CrewSetup.self) var crewSetup
 
     @State private var expandedCruises: Set<String> = []
     @State private var showCompleted = false
@@ -256,6 +257,11 @@ struct CruiseListView: View {
                     }
                 }
                 Spacer()
+                if crewSetup.isCrew && stop.isTender {
+                    Image(systemName: "anchor")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                }
                 if stop.isAtSea {
                     Image(systemName: "water.waves")
                         .foregroundStyle(.mint.opacity(0.8))

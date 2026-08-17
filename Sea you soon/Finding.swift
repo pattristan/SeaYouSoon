@@ -28,6 +28,17 @@ struct Finding: Hashable, Codable, Identifiable {
         CLLocationCoordinate2D(latitude: coordinates.latitude, longitude: coordinates.longitude)
     }
 
+    // Crew-mode extras (optional in the feed; absent in older feeds).
+    var pier: String?
+    var berthing: String?      // "Docked" | "Anchored" | "On Engines" | "Seawalk"
+    var timeChange: Double?    // clocks shift this many hours (can be ±0.5 etc.)
+
+    /// Tender situation: passengers ferried ashore by boat — crew shore leave
+    /// starts late. "Anchored" and station-keeping "On Engines" both qualify.
+    var isTender: Bool {
+        berthing == "Anchored" || berthing == "On Engines"
+    }
+
     /// True on sea days. The feed uses the English sentinel "At Sea".
     var isAtSea: Bool { location == Finding.seaLabel }
 

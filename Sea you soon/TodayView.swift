@@ -356,6 +356,10 @@ struct TodayView: View {
                                                 .italic()
                                                 .multilineTextAlignment(.center)
                                         }
+
+                                        if crewSetup.isCrew {
+                                            crewBerthLine(for: current)
+                                        }
                                     }
                                     .foregroundStyle(Color.oceanInk)
                                     .padding(.horizontal, 32)
@@ -396,6 +400,17 @@ struct TodayView: View {
                                 .frame(width: contentWidth * 0.92)
                                 .glassEffect(.regular.interactive(), in: .capsule)
                                 .onTapGesture { showWeather = true }
+                            }
+
+                            // Crew: clocks change tonight?
+                            if crewSetup.isCrew, let tc = currentFinding?.timeChange {
+                                Label(Self.clockChangeText(tc), systemImage: "clock.arrow.2.circlepath")
+                                    .font(.custom("NY", size: isRegular ? 16 : 13))
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(Color.oceanInk)
+                                    .padding(.vertical, 10)
+                                    .frame(width: contentWidth * 0.92)
+                                    .glassEffect(.regular.tint(.indigo.opacity(0.3)), in: .capsule)
                             }
 
                             // Countdown tile — tap for the voyage progress
@@ -442,6 +457,33 @@ struct TodayView: View {
                 }
             }
         }
+    }
+
+
+    // MARK: - Crew-mode extras
+
+    /// Berth information: the fact that decides Judith's afternoon —
+    /// tender ports mean crew shore leave starts late.
+    @ViewBuilder
+    private func crewBerthLine(for finding: Finding) -> some View {
+        if finding.isTender {
+            Label("At anchor — tender port", systemImage: "anchor")
+                .font(.custom("NY", size: 13))
+                .fontWeight(.semibold)
+                .foregroundStyle(.orange)
+        } else if let berthing = finding.berthing {
+            Label(finding.pier.map { "\(berthing) · \($0)" } ?? berthing,
+                  systemImage: "mappin.and.ellipse")
+                .font(.custom("NY", size: 12))
+                .opacity(0.75)
+        }
+    }
+
+    static func clockChangeText(_ tc: Double) -> String {
+        let amount = tc == tc.rounded() ? String(format: "%.0f", abs(tc)) : String(format: "%.1f", abs(tc))
+        return tc > 0
+            ? "Clocks go forward \(amount) h tonight"
+            : "Clocks go back \(amount) h tonight"
     }
 
     // MARK: - Tap-through sheets

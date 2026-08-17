@@ -44,6 +44,14 @@ class CrewSetup {
         didSet { UserDefaults.standard.set(isGuest, forKey: Keys.isGuest) }
     }
 
+    /// Self-declared "I work aboard this ship" — unlocks crew-oriented info
+    /// (berth, tender days, clock changes). Deliberately NOT gated by any ID:
+    /// nothing it reveals is sensitive. Real credentials (Crew Deck login)
+    /// only become required if privileged features arrive later.
+    var isCrew: Bool {
+        didSet { UserDefaults.standard.set(isCrew, forKey: "isCrew") }
+    }
+
     /// A pairing code arriving via the seayousoon:// deep link (QR scan).
     /// Transient — not persisted; consumed by the onboarding screen.
     var pendingRedeemCode: String?
@@ -72,6 +80,7 @@ class CrewSetup {
         accountId = defaults.string(forKey: Keys.accountId) ?? ""
         watchId = defaults.string(forKey: Keys.watchId) ?? ""
         isGuest = defaults.bool(forKey: Keys.isGuest)
+        isCrew = defaults.bool(forKey: "isCrew")
         previousShip = defaults.string(forKey: "previousShip")
         previousEmbark = defaults.object(forKey: "previousEmbark") as? Date
         previousDisembark = defaults.object(forKey: "previousDisembark") as? Date
@@ -153,6 +162,7 @@ class CrewSetup {
     func unpair() {
         isConfigured = false
         isGuest = false
+        isCrew = false
         crewName = ""
         watcherName = ""
         accountId = ""
