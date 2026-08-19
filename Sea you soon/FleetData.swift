@@ -2,8 +2,14 @@
 //  FleetData.swift
 //  Sea you soon
 //
-//  Loads the bundled fleet feed (Fleet_en.json — all 11 ships) and exposes the
-//  itinerary filtered to the followed crew member's ship + contract window.
+//  The fleet feed (Fleet_en.json — all 11 ships), filtered to the followed
+//  ship + contract window. Three-tier loading keeps the data fresh without
+//  App Store releases:
+//    1. bundled feed  — first run, always works offline
+//    2. cached feed   — the last successfully downloaded update
+//    3. remote feed   — fetched in the background from the webspace; Patrick
+//       FTPs a new Fleet_en.json after each MXP re-import and every installed
+//       app picks it up on next launch.
 //
 
 import Foundation
@@ -11,16 +17,38 @@ import Foundation
 @Observable
 class FleetData {
     /// The full fleet feed, every ship.
-    private let allFindings: [Finding]
+    private var allFindings: [Finding] = []
 
     /// The followed crew member's itinerary (their ship, within the contract dates).
     var findings: [Finding] = []
 
     /// "date|port" → ships calling there that day. Powers sister-ship encounters.
-    private let portIndex: [String: [String]]
+    private var portIndex: [String: [String]] = [:]
+
+    /// Where updated feeds are published (same webspace pattern as the
+    /// original Finding Patrick app).
+    private static let remoteURL = "https://www.oconnell-connect.de/Fleet_en.json"
+
+    private static var cacheFile: URL {
+        let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+            .appendingPathComponent("FleetCache", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir.appendingPathComponent("Fleet_en.json")
+    }
 
     init() {
-        let all: [Finding] = Self.loadFromBundle("Fleet_en.json")
+        // Prefer the last downloaded feed; fall back to the bundled one.
+        if let data = try? Data(contentsOf: Self.cacheFile),
+           let cached = try? JSONDecoder().decode([Finding].self, from: data),
+           !cached.isEmpty {
+            adopt(cached)
+        } else {
+            adopt(Self.loadFromBundle("Fleet_en.json"))
+        }
+    }
+
+    /// Replace the feed and rebuild derived data.
+    private func adopt(_ all: [Finding]) {
         allFindings = all
         var index: [String: [String]] = [:]
         for f in all where f.location != Finding.seaLabel {
@@ -31,6 +59,31 @@ class FleetData {
             }
         }
         portIndex = index
+    }
+
+    /// Fetch the published feed; on success adopt it, cache it, and re-apply
+    /// the current setup. Silently keeps the current feed on any failure
+    /// (offline, 404 before the first upload, bad decode …).
+    func refreshFromRemote(applying setup: CrewSetup) async {
+        let stamp = Int(Date.now.timeIntervalSince1970)
+        guard let url = URL(string: "\(Self.remoteURL)?v=\(stamp)") else { return }
+        var request = URLRequest(url: url)
+        request.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
+        request.timeoutInterval = 20
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard (response as? HTTPURLResponse)?.statusCode == 200 else { return }
+            let fresh = try JSONDecoder().decode([Finding].self, from: data)
+            guard !fresh.isEmpty else { return }
+            await MainActor.run {
+                adopt(fresh)
+                if setup.isConfigured { apply(setup) }
+            }
+            try? data.write(to: Self.cacheFile, options: .atomic)
+        } catch {
+            // Offline or feed not yet published — the bundled/cached feed stands.
+        }
     }
 
     /// "Hamburg - Steinwerder" and "Hamburg - Altona" are the same city for

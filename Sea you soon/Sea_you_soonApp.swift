@@ -26,6 +26,11 @@ struct Sea_you_soonApp: App {
                         .environment(imageLoader)
                         .environment(weatherService)
                         .onAppear { fleetData.apply(crewSetup) }
+                        .task {
+                            // Pick up a freshly published feed (FTP'd after an
+                            // MXP re-import) without an App Store release.
+                            await fleetData.refreshFromRemote(applying: crewSetup)
+                        }
 
                     if !splashDone {
                         SplashScreenView()
