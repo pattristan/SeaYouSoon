@@ -451,12 +451,12 @@ struct TodayView: View {
     @ViewBuilder
     private func crewBerthLine(for finding: Finding) -> some View {
         if finding.isTender {
-            Label("At anchor — tender port", systemImage: "anchor")
+            Label("Planned: at anchor — tender port", systemImage: "anchor")
                 .font(.custom("NY", size: 13))
                 .fontWeight(.semibold)
                 .foregroundStyle(.orange)
         } else if let berthing = finding.berthing {
-            Label(finding.pier.map { "\(berthing) · \($0)" } ?? berthing,
+            Label(finding.pier.map { "Planned: \(berthing) · \($0)" } ?? "Planned: \(berthing)",
                   systemImage: "mappin.and.ellipse")
                 .font(.custom("NY", size: 12))
                 .opacity(0.75)

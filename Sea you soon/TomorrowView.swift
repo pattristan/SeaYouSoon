@@ -94,12 +94,12 @@ struct TomorrowView: View {
 
                                             if crewSetup.isCrew {
                                                 if finding.isTender {
-                                                    Label("At anchor — tender port", systemImage: "anchor")
+                                                    Label("Planned: at anchor — tender port", systemImage: "anchor")
                                                         .font(.custom("NY", size: 13))
                                                         .fontWeight(.semibold)
                                                         .foregroundStyle(.orange)
                                                 } else if let pier = finding.pier {
-                                                    Label(pier, systemImage: "mappin.and.ellipse")
+                                                    Label("Planned: \(pier)", systemImage: "mappin.and.ellipse")
                                                         .font(.custom("NY", size: 12))
                                                         .opacity(0.75)
                                                 }
