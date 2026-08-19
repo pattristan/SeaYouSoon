@@ -37,7 +37,7 @@ private enum DiskCache {
         let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
             .appendingPathComponent("WikiCache", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        return dir.appendingPathComponent("wiki-info.json")
+        return dir.appendingPathComponent("wiki-info-v2.json")
     }()
 
     private static let imageDir: URL = {
@@ -337,26 +337,41 @@ class WikipediaImageLoader {
 
     // MARK: - Title resolution
 
-    private func resolveTitle(cleanName: String, latitude: Double?, longitude: Double?) async -> String {
-        guard let encoded = cleanName.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
-              let checkURL = URL(string: "https://en.wikipedia.org/api/rest_v1/page/summary/\(encoded)") else { return cleanName }
+    /// Title spellings to try for a location. Terminal-style names like
+    /// "Hamburg - Steinwerder" don't exist as article titles; the two
+    /// Wikipedias use "Altona, Hamburg" (en) or "Hamburg-Altona" (de), and
+    /// plain "Steinwerder" also exists. The city itself is the safe last rung
+    /// — far better than whatever geosearch finds next to a container quay.
+    private func titleCandidates(for cleanName: String) -> [String] {
+        let parts = cleanName.components(separatedBy: " - ")
+        guard parts.count == 2 else { return [cleanName] }
+        let city = parts[0].trimmingCharacters(in: .whitespaces)
+        let district = parts[1].trimmingCharacters(in: .whitespaces)
+        return ["\(district), \(city)", "\(city)-\(district)", district, city]
+    }
 
-        var needsGeoSearch = false
+    /// True when the title is a real (non-disambiguation) article on the wiki.
+    private func titleExists(_ title: String, wiki: String) async -> Bool {
+        guard let encoded = title.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
+              let url = URL(string: "https://\(wiki).wikipedia.org/api/rest_v1/page/summary/\(encoded)") else { return false }
         do {
-            let (data, response) = try await session.data(from: checkURL)
-            let httpStatus = (response as? HTTPURLResponse)?.statusCode ?? 0
-            if httpStatus == 200 {
-                let summary = try JSONDecoder().decode(WikiSummary.self, from: data)
-                if summary.type != "disambiguation" { return cleanName }
-                needsGeoSearch = true
-            } else {
-                needsGeoSearch = true
+            let (data, response) = try await session.data(from: url)
+            guard (response as? HTTPURLResponse)?.statusCode == 200 else { return false }
+            let summary = try JSONDecoder().decode(WikiSummary.self, from: data)
+            return summary.type != "disambiguation"
+        } catch { return false }
+    }
+
+    private func resolveTitle(cleanName: String, latitude: Double?, longitude: Double?) async -> String {
+        let candidates = titleCandidates(for: cleanName)
+        // English pass first (this is the English app), then German.
+        for wiki in wikis {
+            for candidate in candidates {
+                if await titleExists(candidate, wiki: wiki) { return candidate }
             }
-        } catch {
-            needsGeoSearch = true
         }
 
-        guard needsGeoSearch, let lat = latitude, let lon = longitude else { return cleanName }
+        guard let lat = latitude, let lon = longitude else { return cleanName }
 
         let geoURLString = "https://en.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord=\(lat)%7C\(lon)&gsradius=10000&gslimit=5&format=json"
         guard let geoURL = URL(string: geoURLString) else { return cleanName }
