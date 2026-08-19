@@ -26,6 +26,10 @@ struct TodayView: View {
     @State private var showProgress = false
     @State private var showWeather = false
 
+    // Family: the latest one-way message from the crew member.
+    @State private var latestMessage: (fromName: String, message: CrewMessage)?
+    @AppStorage("dismissedMessageId") private var dismissedMessageId = 0
+
     private static let dayFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "dd.MM.yyyy"
@@ -261,8 +265,48 @@ struct TodayView: View {
             .navigationTitle("Where is \(name)? · \(todayFormatted)")
             .navigationBarTitleDisplayMode(.inline)
             .safeAreaInset(edge: .top) {
-                // After a "Change ship" quick look: one tap back home.
-                ReturnShipChip()
+                VStack(spacing: 8) {
+                    // After a "Change ship" quick look: one tap back home.
+                    ReturnShipChip()
+
+                    // Family: a message in a bottle from the crew member.
+                    if let latest = latestMessage, latest.message.id != dismissedMessageId {
+                        HStack(alignment: .top, spacing: 10) {
+                            Text("💌")
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text("From \(latest.fromName)")
+                                    .font(.heading(size: 13)).fontWeight(.semibold)
+                                Text(latest.message.body)
+                                    .font(.newYork(size: 15))
+                            }
+                            Spacer()
+                            Button {
+                                withAnimation(.spring(duration: 0.4)) {
+                                    dismissedMessageId = latest.message.id
+                                }
+                            } label: {
+                                Image(systemName: "xmark")
+                                    .font(.caption2)
+                                    .padding(6)
+                            }
+                        }
+                        .foregroundStyle(Color.oceanInk)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        .glassEffect(.regular.tint(.pink.opacity(0.3)), in: .rect(cornerRadius: 18))
+                        .padding(.horizontal, 20)
+                    }
+                }
+            }
+            .task {
+                // Family mode only: quietly check for a message at launch.
+                guard !crewSetup.isGuest, !crewSetup.watchId.isEmpty else { return }
+                if let result = try? await CrewDeck.familyMessages(watchId: crewSetup.watchId),
+                   let newest = result.messages.first {
+                    withAnimation(.spring(duration: 0.4)) {
+                        latestMessage = (result.fromName, newest)
+                    }
+                }
             }
             .navigationDestination(isPresented: $showList) { CruiseListView() }
             .navigationDestination(isPresented: $showWebcam) {

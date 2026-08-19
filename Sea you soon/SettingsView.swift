@@ -15,6 +15,7 @@ struct SettingsView: View {
 
     // "Change ship" (guest mode): prefilled with the current setup on open.
     @State private var showChangeShip = false
+    @State private var showFollowers = false
     @State private var newShip = AidaShip.aidasol.rawValue
     @State private var newEmbark = Date.now
     @State private var newDisembark = Date.now
@@ -71,6 +72,20 @@ struct SettingsView: View {
                                 .padding(.horizontal, 4)
                             }
 
+                            // Followers & one-way messages (Crew Deck sign-in inside —
+                            // messaging speaks AS a person, the toggle isn't enough).
+                            if crewSetup.isGuest && crewSetup.isCrew {
+                                Button {
+                                    showFollowers = true
+                                } label: {
+                                    Label("My followers & messages", systemImage: "heart.text.square")
+                                        .fontWeight(.semibold)
+                                        .frame(maxWidth: .infinity).padding(.vertical, 6)
+                                }
+                                .buttonStyle(.glassProminent).tint(.pink.opacity(0.7))
+                                .padding(.horizontal, 24)
+                            }
+
                             // Guest mode: switch ship/dates without starting over —
                             // e.g. a seafarer checking the route of a new offer.
                             if crewSetup.isGuest {
@@ -114,6 +129,7 @@ struct SettingsView: View {
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
+            .sheet(isPresented: $showFollowers) { FollowersView() }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { dismiss() }.foregroundStyle(Color.oceanInk)
