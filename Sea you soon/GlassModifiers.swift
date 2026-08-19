@@ -15,6 +15,21 @@ extension Color {
     })
 }
 
+extension Font {
+    /// New York — Apple's serif companion to San Francisco, the "NY" the app
+    /// always intended. Provided by the system via the serif design; Apple's
+    /// font license forbids bundling the file, and there's no need to.
+    static func newYork(size: CGFloat) -> Font {
+        .system(size: size, design: .serif)
+    }
+
+    /// Headings, names, times and data labels: San Francisco (system sans).
+    /// The editorial split: data informs in sans, the app narrates in serif.
+    static func heading(size: CGFloat) -> Font {
+        .system(size: size)
+    }
+}
+
 struct AnimatedButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label

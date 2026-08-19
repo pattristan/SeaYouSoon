@@ -315,27 +315,27 @@ struct TodayView: View {
                                     // edge, so name and hours centre on each other.
                                     VStack(spacing: 8) {
                                         Text(current.location)
-                                            .font(.custom("NY", size: isRegular ? 30 : 26))
+                                            .font(.heading(size: isRegular ? 30 : 26))
                                             .fontWeight(.bold)
                                             .multilineTextAlignment(.center)
 
                                         if !current.isAtSea {
                                             Text(current.fromTill)
                                                 .fontWeight(.semibold)
-                                                .font(.custom("NY", size: isRegular ? 20 : 17))
+                                                .font(.heading(size: isRegular ? 20 : 17))
                                                 .opacity(0.9)
 
                                             // Whose clock? Convert for viewers far from the port.
                                             if let hint = ShipTime.viewerTimeHint(for: current) {
                                                 Text(hint)
-                                                    .font(.custom("NY", size: isRegular ? 14 : 12))
+                                                    .font(.newYork(size: isRegular ? 14 : 12))
                                                     .opacity(0.65)
                                             }
                                         }
 
                                         if let seaDescription = seaDayDescription {
                                             Text(seaDescription)
-                                                .font(.custom("NY", size: isRegular ? 16 : 13))
+                                                .font(.newYork(size: isRegular ? 16 : 13))
                                                 .opacity(0.8)
                                                 .italic()
                                                 .multilineTextAlignment(.center)
@@ -364,7 +364,7 @@ struct TodayView: View {
                             // Ship time tile — tap for the time-zone story
                             if let time = shipTimeString {
                                 Text("current time on board: \(time)")
-                                    .font(.custom("NY", size: isRegular ? 18 : 14))
+                                    .font(.newYork(size: isRegular ? 18 : 14))
                                     .foregroundStyle(Color.oceanInk)
                                     .padding(.vertical, 12)
                                     .frame(width: contentWidth * 0.92)
@@ -378,7 +378,7 @@ struct TodayView: View {
                                     Image(systemName: info.icon).symbolRenderingMode(.multicolor)
                                     Text("weather: \(String(format: "%.0f", temp))° \(info.description)")
                                 }
-                                .font(.custom("NY", size: isRegular ? 18 : 14))
+                                .font(.newYork(size: isRegular ? 18 : 14))
                                 .foregroundStyle(Color.oceanInk)
                                 .padding(.vertical, 12)
                                 .frame(width: contentWidth * 0.92)
@@ -389,7 +389,7 @@ struct TodayView: View {
                             // Crew: clocks change tonight?
                             if crewSetup.isCrew, let tc = currentFinding?.timeChange {
                                 Label(Self.clockChangeText(tc), systemImage: "clock.arrow.2.circlepath")
-                                    .font(.custom("NY", size: isRegular ? 16 : 13))
+                                    .font(.heading(size: isRegular ? 16 : 13))
                                     .fontWeight(.semibold)
                                     .foregroundStyle(Color.oceanInk)
                                     .padding(.vertical, 10)
@@ -403,7 +403,7 @@ struct TodayView: View {
                                     Image(systemName: info.icon)
                                     Text(info.message)
                                 }
-                                .font(.custom("NY", size: isRegular ? 18 : 14))
+                                .font(.newYork(size: isRegular ? 18 : 14))
                                 .fontWeight(.bold)
                                 .foregroundStyle(Color.oceanInk)
                                 .padding(.vertical, 10)
@@ -452,13 +452,13 @@ struct TodayView: View {
     private func crewBerthLine(for finding: Finding) -> some View {
         if finding.isTender {
             Label("Planned: at anchor — tender port", systemImage: "anchor")
-                .font(.custom("NY", size: 13))
+                .font(.heading(size: 13))
                 .fontWeight(.semibold)
                 .foregroundStyle(.orange)
         } else if let berthing = finding.berthing {
             Label(finding.pier.map { "Planned: \(berthing) · \($0)" } ?? "Planned: \(berthing)",
                   systemImage: "mappin.and.ellipse")
-                .font(.custom("NY", size: 12))
+                .font(.heading(size: 12))
                 .opacity(0.75)
         }
     }
@@ -478,17 +478,17 @@ struct TodayView: View {
             OceanBackground()
             VStack(spacing: 14) {
                 Text("Ship's clock")
-                    .font(.custom("NY", size: 24)).fontWeight(.bold)
+                    .font(.heading(size: 24)).fontWeight(.bold)
 
                 Text(shipTimeString ?? "--:--")
                     .font(.system(size: 60, weight: .bold, design: .rounded))
                     .monospacedDigit()
 
                 Text("Where you are, it's \(Self.viewerClock.string(from: .now))")
-                    .font(.custom("NY", size: 16))
+                    .font(.newYork(size: 16))
 
                 Text(timeDifferenceSentence)
-                    .font(.custom("NY", size: 14))
+                    .font(.newYork(size: 14))
                     .opacity(0.75)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 30)
@@ -541,7 +541,7 @@ struct TodayView: View {
             VStack(spacing: 12) {
                 Text(currentFinding.map { $0.isAtSea ? "Weather at sea" : "Weather in \($0.location)" }
                      ?? "Weather at the ship")
-                    .font(.custom("NY", size: 24)).fontWeight(.bold)
+                    .font(.heading(size: 24)).fontWeight(.bold)
 
                 if let info = weatherService.weatherInfo {
                     Image(systemName: info.icon)
@@ -554,7 +554,7 @@ struct TodayView: View {
                     }
 
                     Text(info.description)
-                        .font(.custom("NY", size: 18))
+                        .font(.newYork(size: 18))
 
                     HStack(spacing: 22) {
                         if let feels = weatherService.apparentTemperature {
@@ -591,7 +591,7 @@ struct TodayView: View {
     private func weatherFact(icon: String, value: String, label: String) -> some View {
         VStack(spacing: 3) {
             Image(systemName: icon).symbolRenderingMode(.multicolor)
-            Text(value).font(.custom("NY", size: 15)).fontWeight(.semibold)
+            Text(value).font(.heading(size: 15)).fontWeight(.semibold)
             Text(label).font(.caption2).opacity(0.65)
         }
     }
@@ -612,10 +612,10 @@ struct TodayView: View {
             OceanBackground()
             VStack(spacing: 16) {
                 Text(crewSetup.isGuest ? "Your cruise" : "\(name)'s voyage")
-                    .font(.custom("NY", size: 24)).fontWeight(.bold)
+                    .font(.heading(size: 24)).fontWeight(.bold)
 
                 Text("\(Self.mediumDate.string(from: crewSetup.embarkDate))  –  \(Self.mediumDate.string(from: crewSetup.disembarkDate))")
-                    .font(.custom("NY", size: 15))
+                    .font(.heading(size: 15))
 
                 ProgressView(value: fraction)
                     .tint(.teal)
@@ -633,7 +633,7 @@ struct TodayView: View {
                         Text("Voyage complete — welcome home! 🎉")
                     }
                 }
-                .font(.custom("NY", size: 17))
+                .font(.heading(size: 17))
                 .fontWeight(.semibold)
             }
             .foregroundStyle(Color.oceanInk)
@@ -662,7 +662,7 @@ struct TodayView: View {
                         .padding(.top, 30)
 
                     Text(homeTitle)
-                        .font(.custom("NY", size: 30))
+                        .font(.heading(size: 30))
                         .fontWeight(.bold)
                         .foregroundStyle(Color.oceanInk)
                         .multilineTextAlignment(.center)
@@ -672,7 +672,7 @@ struct TodayView: View {
                             Image(systemName: info.icon)
                             Text(info.message)
                         }
-                        .font(.custom("NY", size: 19))
+                        .font(.newYork(size: 19))
                         .fontWeight(.bold)
                         .foregroundStyle(Color.oceanInk)
                         .padding(.horizontal, 20)
@@ -686,7 +686,7 @@ struct TodayView: View {
                                 .font(.footnote)
                                 .foregroundStyle(Color.oceanInk.opacity(0.8))
                             Text(dep.location)
-                                .font(.custom("NY", size: 22))
+                                .font(.heading(size: 22))
                                 .foregroundStyle(Color.oceanInk)
                             Text(Self.mediumDate.string(from: crewSetup.embarkDate))
                                 .font(.callout)

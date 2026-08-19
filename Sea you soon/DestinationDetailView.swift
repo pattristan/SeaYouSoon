@@ -74,7 +74,7 @@ struct DestinationDetailView: View {
                                     .font(.caption)
                                     .foregroundStyle(Color.oceanInk.opacity(0.65))
                                 Label(finding.fromTill, systemImage: "clock")
-                                    .font(.custom("NY", size: 15))
+                                    .font(.heading(size: 15))
                                     .foregroundStyle(Color.oceanInk)
                             }
                             Spacer()
@@ -88,7 +88,7 @@ struct DestinationDetailView: View {
                                 item.openInMaps()
                             } label: {
                                 Label("Maps", systemImage: "arrow.triangle.turn.up.right.circle.fill")
-                                    .font(.custom("NY", size: 16))
+                                    .font(.heading(size: 16))
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 8)
                             }
@@ -100,7 +100,7 @@ struct DestinationDetailView: View {
                         Text(imageLoader?.extract(for: finding.location)
                              ?? seaDayDescription
                              ?? "Fetching information…")
-                            .font(.custom("NY", size: 15))
+                            .font(.newYork(size: 15))
                             .foregroundStyle(Color.oceanInk)
                             .padding(14)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -109,7 +109,7 @@ struct DestinationDetailView: View {
                         if let articleURL = imageLoader?.articleURL(for: finding.location) {
                             Link(destination: articleURL) {
                                 Label("Read more on Wikipedia", systemImage: "book")
-                                    .font(.custom("NY", size: 14))
+                                    .font(.heading(size: 14))
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 8)
                             }

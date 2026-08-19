@@ -43,7 +43,7 @@ struct SettingsView: View {
                                 .font(.callout).foregroundStyle(Color.oceanInk.opacity(0.8))
 
                             Text(crewSetup.isGuest ? crewSetup.shipName : crewSetup.crewName)
-                                .font(.custom("NY", size: 34)).fontWeight(.bold)
+                                .font(.heading(size: 34)).fontWeight(.bold)
                                 .foregroundStyle(Color.oceanInk)
 
                             VStack(spacing: 0) {

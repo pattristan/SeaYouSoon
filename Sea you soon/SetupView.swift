@@ -87,7 +87,7 @@ struct OnboardingView: View {
                     .offset(y: floatIcon ? -6 : 6)
 
                 Text("Sea You Soon")
-                    .font(.custom("NY", size: 34)).fontWeight(.bold)
+                    .font(.heading(size: 34)).fontWeight(.bold)
                     .foregroundStyle(Color.oceanInk)
                 Text("Follow a voyage around the world")
                     .font(.callout).foregroundStyle(Color.oceanInk.opacity(0.85))
@@ -144,7 +144,7 @@ struct OnboardingView: View {
             GlassEffectContainer(spacing: 24) {
                 VStack(spacing: 18) {
                     Text("Follow someone")
-                        .font(.custom("NY", size: 30)).fontWeight(.bold)
+                        .font(.heading(size: 30)).fontWeight(.bold)
                         .foregroundStyle(Color.oceanInk).padding(.top, 20)
 
                     glassField(icon: "person.fill", id: "name") {
@@ -207,7 +207,7 @@ struct OnboardingView: View {
             GlassEffectContainer(spacing: 24) {
                 VStack(spacing: 18) {
                     Text("Follow a ship")
-                        .font(.custom("NY", size: 30)).fontWeight(.bold)
+                        .font(.heading(size: 30)).fontWeight(.bold)
                         .foregroundStyle(Color.oceanInk).padding(.top, 20)
 
                     // Ship picker tile

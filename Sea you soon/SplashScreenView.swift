@@ -32,7 +32,7 @@ struct SplashScreenView: View {
 //                    .shadow(radius: 8)
 
                 Text(displayedText)
-                    .font(.custom("NY", size: 34))
+                    .font(.heading(size: 34))
                     .fontWeight(.bold)
                     .foregroundStyle(Color.oceanInk)
             }

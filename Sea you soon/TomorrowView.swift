@@ -67,19 +67,19 @@ struct TomorrowView: View {
 
                                         VStack(spacing: 8) {
                                             Text(finding.location)
-                                                .font(.custom("NY", size: 26))
+                                                .font(.heading(size: 26))
                                                 .fontWeight(.bold)
                                                 .multilineTextAlignment(.center)
 
                                             if !finding.isAtSea {
                                                 Text(finding.fromTill)
                                                     .fontWeight(.semibold)
-                                                    .font(.custom("NY", size: 17))
+                                                    .font(.heading(size: 17))
                                                     .opacity(0.9)
 
                                                 if let hint = ShipTime.viewerTimeHint(for: finding) {
                                                     Text(hint)
-                                                        .font(.custom("NY", size: 12))
+                                                        .font(.newYork(size: 12))
                                                         .opacity(0.65)
                                                 }
                                             }
@@ -87,7 +87,7 @@ struct TomorrowView: View {
                                             Text(finding.isAtSea
                                                  ? "\(name) will be at sea"
                                                  : "\(name) will be in \(finding.location)")
-                                                .font(.custom("NY", size: 13))
+                                                .font(.newYork(size: 13))
                                                 .opacity(0.8)
                                                 .italic()
                                                 .multilineTextAlignment(.center)
@@ -95,17 +95,17 @@ struct TomorrowView: View {
                                             if crewSetup.isCrew {
                                                 if finding.isTender {
                                                     Label("Planned: at anchor — tender port", systemImage: "anchor")
-                                                        .font(.custom("NY", size: 13))
+                                                        .font(.heading(size: 13))
                                                         .fontWeight(.semibold)
                                                         .foregroundStyle(.orange)
                                                 } else if let pier = finding.pier {
                                                     Label("Planned: \(pier)", systemImage: "mappin.and.ellipse")
-                                                        .font(.custom("NY", size: 12))
+                                                        .font(.heading(size: 12))
                                                         .opacity(0.75)
                                                 }
                                                 if let tc = finding.timeChange {
                                                     Label(TodayView.clockChangeText(tc), systemImage: "clock.arrow.2.circlepath")
-                                                        .font(.custom("NY", size: 12))
+                                                        .font(.heading(size: 12))
                                                         .fontWeight(.semibold)
                                                         .foregroundStyle(.indigo)
                                                 }
@@ -145,7 +145,7 @@ struct TomorrowView: View {
                                 .frame(width: 100, height: 100)
                                 .glassEffect(.regular.interactive(), in: .circle)
                             Text(homeTomorrowText)
-                                .font(.custom("NY", size: 20))
+                                .font(.newYork(size: 20))
                                 .multilineTextAlignment(.center)
                                 .foregroundStyle(Color.oceanInk)
                                 .padding(.horizontal, 24)
