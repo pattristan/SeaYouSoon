@@ -129,34 +129,10 @@ struct TodayView: View {
 
     // MARK: - Coordinates (interpolated on sea days)
 
+    /// The feed's sea-day coordinates are route-aware (via maritime gates in
+    /// the importer), so the feed is the single source of truth for position.
     private var estimatedCoordinates: Finding.Coordinates {
-        guard let current = currentFinding else {
-            return Finding.Coordinates(latitude: 0, longitude: 0)
-        }
-        guard current.isAtSea,
-              let idx = fleetData.findings.firstIndex(where: { $0.id == current.id }),
-              let start = fleetData.findings[...idx].last(where: { !$0.isAtSea }),
-              let end = fleetData.findings[idx...].first(where: { !$0.isAtSea }) else {
-            return current.coordinates
-        }
-
-        var firstSeaIdx = idx
-        while firstSeaIdx > fleetData.findings.startIndex
-                && fleetData.findings[fleetData.findings.index(before: firstSeaIdx)].isAtSea {
-            firstSeaIdx = fleetData.findings.index(before: firstSeaIdx)
-        }
-        var lastSeaIdx = idx
-        while fleetData.findings.index(after: lastSeaIdx) < fleetData.findings.endIndex
-                && fleetData.findings[fleetData.findings.index(after: lastSeaIdx)].isAtSea {
-            lastSeaIdx = fleetData.findings.index(after: lastSeaIdx)
-        }
-        let totalSeaDays = lastSeaIdx - firstSeaIdx + 1
-        let dayNumber = idx - firstSeaIdx + 1
-        let progress = Double(dayNumber) / Double(totalSeaDays + 1)
-
-        let lat = start.coordinates.latitude + (end.coordinates.latitude - start.coordinates.latitude) * progress
-        let lon = start.coordinates.longitude + (end.coordinates.longitude - start.coordinates.longitude) * progress
-        return Finding.Coordinates(latitude: lat, longitude: lon)
+        currentFinding?.coordinates ?? Finding.Coordinates(latitude: 0, longitude: 0)
     }
 
     // MARK: - Countdown
