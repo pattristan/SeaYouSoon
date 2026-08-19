@@ -12,9 +12,10 @@ struct Sea_you_soonApp: App {
     @State private var imageLoader = WikipediaImageLoader()
     @State private var weatherService = WeatherService()
 
+    // The splash is a welcome, not a toll booth: it plays on the very first
+    // launch only, then never again (persisted, so cold starts skip it too).
     @State private var splashOffset: CGFloat = 0
-    @State private var splashDone = Self.hasLaunched
-    private static var hasLaunched = false
+    @State private var splashDone = UserDefaults.standard.bool(forKey: "hasSeenSplash")
 
     var body: some Scene {
         WindowGroup {
@@ -45,7 +46,7 @@ struct Sea_you_soonApp: App {
                             splashOffset = geo.size.width
                         } completion: {
                             splashDone = true
-                            Self.hasLaunched = true
+                            UserDefaults.standard.set(true, forKey: "hasSeenSplash")
                         }
                     }
                 }

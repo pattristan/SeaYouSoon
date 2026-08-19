@@ -17,7 +17,7 @@ struct OnboardingView: View {
     @Environment(CrewSetup.self) var crewSetup
     @Environment(FleetData.self) var fleetData
 
-    private enum Mode { case family, guest }
+    private enum Mode { case family, guest, crew }
     @State private var mode: Mode?
 
     // Family (code) state
@@ -41,7 +41,8 @@ struct OnboardingView: View {
                 switch mode {
                 case .none:    chooser
                 case .family:  familyForm
-                case .guest:   guestForm
+                case .guest:   shipForm(crew: false)
+                case .crew:    shipForm(crew: true)
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
@@ -109,6 +110,25 @@ struct OnboardingView: View {
                 ) {
                     CruiseLinerIcon().frame(height: 18)
                 }
+                choiceCard(
+                    tint: .indigo,
+                    title: "I work on board",
+                    subtitle: "Berths, tender days & your followers",
+                    action: {
+                        // Contract dates, not holiday dates: default to a
+                        // typical four-month tour so the picker starts close.
+                        guestEmbark = .now
+                        guestDisembark = Calendar.current.date(byAdding: .month, value: 4, to: .now) ?? .now
+                        withAnimation(.spring(duration: 0.4)) { mode = .crew }
+                    }
+                ) {
+                    Image(systemName: "person.badge.shield.checkmark.fill").font(.title3)
+                }
+
+                Text("No account, no sign-up, nothing to allow. The app only knows the ships' schedules — never where you are.")
+                    .font(.footnote).foregroundStyle(Color.oceanInk.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 24).padding(.top, 8)
             }
             .padding(.horizontal, 24)
             .padding(.top, 50)
@@ -163,6 +183,10 @@ struct OnboardingView: View {
                         .font(.footnote).foregroundStyle(Color.oceanInk.opacity(0.7))
                         .multilineTextAlignment(.center).padding(.horizontal, 24)
 
+                    Text("No code yet? Ask them for one — it takes a minute on crew.oconnell-connect.com. Until then, you can still follow their ship from the previous screen.")
+                        .font(.footnote).foregroundStyle(Color.oceanInk.opacity(0.55))
+                        .multilineTextAlignment(.center).padding(.horizontal, 24)
+
                     if let errorMessage {
                         Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
                             .font(.callout).foregroundStyle(.white)
@@ -200,13 +224,13 @@ struct OnboardingView: View {
             && !isRedeeming
     }
 
-    // MARK: - Guest (ship) form
+    // MARK: - Ship form (guest and crew share it; copy and defaults differ)
 
-    private var guestForm: some View {
+    private func shipForm(crew: Bool) -> some View {
         ScrollView {
             GlassEffectContainer(spacing: 24) {
                 VStack(spacing: 18) {
-                    Text("Follow a ship")
+                    Text(crew ? "Your ship & contract" : "Follow a ship")
                         .font(.heading(size: 30)).fontWeight(.bold)
                         .foregroundStyle(Color.oceanInk).padding(.top, 20)
 
@@ -227,23 +251,40 @@ struct OnboardingView: View {
                     .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 16))
                     .padding(.horizontal, 4)
 
-                    dateTile(icon: "calendar", label: "From", selection: $guestEmbark, range: nil)
-                    dateTile(icon: "calendar.badge.checkmark", label: "Until", selection: $guestDisembark, range: guestEmbark...)
+                    dateTile(icon: "calendar",
+                             label: crew ? "Embark" : "From",
+                             selection: $guestEmbark, range: nil)
+                    dateTile(icon: "calendar.badge.checkmark",
+                             label: crew ? "Disembark" : "Until",
+                             selection: $guestDisembark, range: guestEmbark...)
 
-                    Text("You'll see this ship's public itinerary — where it is today and tomorrow.")
+                    Text(crew
+                         ? "You'll get the crew view: planned berths, tender anchorages, clock changes and the Crew Portal.\n\nWant family to follow you, or to send them messages? Invite them from Settings → My followers & messages — all you need is a free Crew Deck account:"
+                         : "You'll see this ship's public itinerary — where it is today and tomorrow.")
                         .font(.footnote).foregroundStyle(Color.oceanInk.opacity(0.7))
                         .multilineTextAlignment(.center).padding(.horizontal, 24)
+
+                    if crew {
+                        Link(destination: URL(string: "https://crew.oconnell-connect.com")!) {
+                            Label("crew.oconnell-connect.com", systemImage: "safari")
+                                .font(.footnote.weight(.semibold))
+                                .padding(.horizontal, 16).padding(.vertical, 10)
+                        }
+                        .buttonStyle(.glass).tint(.indigo)
+                        .foregroundStyle(Color.oceanInk)
+                    }
 
                     Button {
                         withAnimation {
                             crewSetup.configureGuest(ship: guestShip, embark: guestEmbark, disembark: guestDisembark)
+                            crewSetup.isCrew = crew
                             fleetData.apply(crewSetup)
                         }
                     } label: {
-                        Text("Start watching").fontWeight(.semibold)
+                        Text(crew ? "Start my voyage" : "Start watching").fontWeight(.semibold)
                             .frame(maxWidth: .infinity).padding(.vertical, 6)
                     }
-                    .buttonStyle(.glassProminent).tint(.teal)
+                    .buttonStyle(.glassProminent).tint(crew ? .indigo : .teal)
                     .disabled(guestDisembark < guestEmbark)
                     .padding(.horizontal, 24).padding(.top, 4)
                 }
