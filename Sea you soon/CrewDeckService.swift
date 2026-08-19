@@ -38,6 +38,15 @@ struct InviteCode: Codable {
     let link: String
 }
 
+/// The CURRENT contract behind a pairing link. Tours get extended and ships
+/// change; the family app re-fetches this at launch so it quietly stays true.
+struct FamilyProfile: Codable {
+    let crewName: String
+    let shipName: String
+    let embarkDate: Date
+    let disembarkDate: Date
+}
+
 enum CrewDeckError: LocalizedError {
     case notSignedIn
     case invalidLogin
@@ -122,6 +131,20 @@ enum CrewDeck {
         case 401: throw CrewDeckError.notSignedIn
         default:  throw CrewDeckError.network
         }
+    }
+
+    /// Family side — the watchId issued at pairing is the credential.
+    /// 404 means the link is unknown or was revoked; callers leave the local
+    /// setup untouched in that case (revocation just stops updates/messages).
+    static func familyProfile(watchId: String) async throws -> FamilyProfile {
+        let (data, response) = try await URLSession.shared.data(
+            for: request("api/profile/\(watchId)"))
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+            throw CrewDeckError.network
+        }
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return try decoder.decode(FamilyProfile.self, from: data)
     }
 
     /// Family side — the watchId issued at pairing is the credential.

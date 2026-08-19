@@ -31,6 +31,14 @@ struct Sea_you_soonApp: App {
                             // Pick up a freshly published feed (FTP'd after an
                             // MXP re-import) without an App Store release.
                             await fleetData.refreshFromRemote(applying: crewSetup)
+                            // Family mode: adopt contract changes (extended
+                            // tours, ship swaps) made on Crew Deck since the
+                            // original pairing. Silent when offline.
+                            if !crewSetup.isGuest, !crewSetup.watchId.isEmpty,
+                               let profile = try? await CrewDeck.familyProfile(watchId: crewSetup.watchId),
+                               crewSetup.sync(with: profile) {
+                                fleetData.apply(crewSetup)
+                            }
                         }
 
                     if !splashDone {

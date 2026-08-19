@@ -107,6 +107,23 @@ class CrewSetup {
         isConfigured = true
     }
 
+    /// Adopt the server's current contract for the paired seafarer (family
+    /// mode). Returns true if anything actually changed — the caller then
+    /// re-applies the fleet filter so the new window shows immediately.
+    func sync(with profile: FamilyProfile) -> Bool {
+        guard !isGuest, isConfigured else { return false }
+        let changed = crewName != profile.crewName
+            || shipName != profile.shipName
+            || embarkDate != profile.embarkDate
+            || disembarkDate != profile.disembarkDate
+        guard changed else { return false }
+        crewName = profile.crewName
+        shipName = profile.shipName
+        embarkDate = profile.embarkDate
+        disembarkDate = profile.disembarkDate
+        return true
+    }
+
     /// Follow a ship's public itinerary (guest mode — no person, no code).
     /// Switching away from an existing guest setup remembers it, so a quick
     /// look at a job offer's route is one tap away from home again.
