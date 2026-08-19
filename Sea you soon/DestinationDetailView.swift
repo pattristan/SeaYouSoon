@@ -82,7 +82,9 @@ struct DestinationDetailView: View {
                                 // Open Maps showing the ship's position as a named
                                 // pin — not directions from the viewer (who may be
                                 // an ocean away). Maps offers directions on demand.
-                                let item = MKMapItem(placemark: MKPlacemark(coordinate: finding.locationCoordinate))
+                                let location = CLLocation(latitude: finding.locationCoordinate.latitude,
+                                                          longitude: finding.locationCoordinate.longitude)
+                                let item = MKMapItem(location: location, address: nil)
                                 let place = finding.isAtSea ? "at sea" : finding.location
                                 item.name = finding.ship.map { "\($0) — \(place)" } ?? place
                                 item.openInMaps()
