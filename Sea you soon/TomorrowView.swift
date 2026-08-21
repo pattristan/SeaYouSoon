@@ -89,7 +89,6 @@ struct TomorrowView: View {
                                                  : "\(name) will be in \(finding.location)")
                                                 .font(.newYork(size: 13))
                                                 .opacity(0.8)
-                                                .italic()
                                                 .multilineTextAlignment(.center)
 
                                             if crewSetup.isCrew {
