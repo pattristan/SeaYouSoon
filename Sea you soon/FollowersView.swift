@@ -12,6 +12,7 @@ import SwiftUI
 
 struct FollowersView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(CrewSetup.self) private var crewSetup
 
     /// Remembered locally so the header can greet; the session cookie itself
     /// lives in URLSession's cookie storage (~14 days).
@@ -29,6 +30,7 @@ struct FollowersView: View {
     @State private var justSentTo: String?
     @State private var revokeCandidate: Follower?
     @State private var invite: InviteCode?
+    @State private var inviteFor = ""
     @State private var generating = false
 
     var body: some View {
@@ -179,6 +181,18 @@ struct FollowersView: View {
                 .buttonStyle(.glassProminent).tint(.pink.opacity(0.7))
                 .padding(.horizontal, 12)
             } else {
+                // The name only personalises the message — nothing is stored.
+                HStack(spacing: 10) {
+                    Image(systemName: "heart")
+                        .foregroundStyle(Color.oceanInk.opacity(0.7))
+                    TextField("Who is it for? e.g. Maria (optional)", text: $inviteFor)
+                        .textInputAutocapitalization(.words)
+                        .foregroundStyle(Color.oceanInk)
+                }
+                .padding(.horizontal, 16).padding(.vertical, 12)
+                .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 14))
+                .padding(.horizontal, 12)
+
                 Button {
                     Task { await generateInvite() }
                 } label: {
@@ -208,8 +222,13 @@ struct FollowersView: View {
     }
 
     private func shareText(for invite: InviteCode) -> String {
-        """
-        Follow my voyage in Sea You Soon 💙
+        let recipient = inviteFor.trimmingCharacters(in: .whitespaces)
+        let greeting = recipient.isEmpty ? "Hello!" : "Hello \(recipient)!"
+        let sender = crewDeckName.isEmpty ? "Someone who loves you" : crewDeckName
+        let aboard = crewSetup.shipName.isEmpty ? "" : " aboard \(crewSetup.shipName)"
+        return """
+        \(greeting) \(sender) has invited you to follow their tour of duty\(aboard) 💙
+        If you don't have the app yet, download “Sea You Soon” from the App Store.
         Your invitation code: \(invite.code)
         Or just tap: \(invite.link)
         (works once, valid 7 days)
@@ -351,4 +370,5 @@ struct FollowersView: View {
 
 #Preview {
     FollowersView()
+        .environment(CrewSetup())
 }

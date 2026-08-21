@@ -29,6 +29,8 @@ struct TodayView: View {
     // Family: the latest one-way message from the crew member.
     @State private var latestMessage: (fromName: String, message: CrewMessage)?
     @AppStorage("dismissedMessageId") private var dismissedMessageId = 0
+    /// Settings toggle: hide "N days to go" for those who'd rather not count.
+    @AppStorage("showCountdown") private var showCountdown = true
 
     private static let dayFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -381,7 +383,7 @@ struct TodayView: View {
                                             Text(seaDescription)
                                                 .font(.newYork(size: isRegular ? 16 : 13))
                                                 .opacity(0.8)
-                                                .italic()
+                                              //  .italic()
                                                 .multilineTextAlignment(.center)
                                         }
 
@@ -441,8 +443,9 @@ struct TodayView: View {
                                     .glassEffect(.regular.tint(.indigo.opacity(0.3)), in: .capsule)
                             }
 
-                            // Countdown tile — tap for the voyage progress
-                            if let info = countdown {
+                            // Countdown tile — tap for the voyage progress.
+                            // Optional: "day 100 · 260 to go" isn't everyone's friend.
+                            if showCountdown, let info = countdown {
                                 HStack(spacing: 6) {
                                     Image(systemName: info.icon)
                                     Text(info.message)

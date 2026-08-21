@@ -50,13 +50,19 @@ struct FamilyProfile: Codable {
 enum CrewDeckError: LocalizedError {
     case notSignedIn
     case invalidLogin
+    case usernameTaken
+    case badFields
+    case rateLimited
     case network
 
     var errorDescription: String? {
         switch self {
-        case .notSignedIn:  return "Please sign in to Crew Deck."
-        case .invalidLogin: return "Username or PIN not recognised."
-        case .network:      return "Couldn't reach Crew Deck. Please check your connection."
+        case .notSignedIn:   return "Please sign in to Crew Deck."
+        case .invalidLogin:  return "Username or PIN not recognised."
+        case .usernameTaken: return "That username is taken — choose another."
+        case .badFields:     return "Username: 3–20 letters/numbers. PIN: at least 4 digits."
+        case .rateLimited:   return "Too many attempts — please wait a few minutes."
+        case .network:       return "Couldn't reach Crew Deck. Please check your connection."
         }
     }
 }
@@ -68,6 +74,10 @@ enum CrewDeck {
         let username: String
         let name: String
         let ship: String
+        // Contract dates (ISO-8601): present on login, so a reinstalled app
+        // can restore crew mode from a bare username + PIN.
+        let embarkDate: String?
+        let disembarkDate: String?
     }
 
     private static func request(_ path: String, method: String = "GET",
@@ -89,6 +99,29 @@ enum CrewDeck {
         switch (response as? HTTPURLResponse)?.statusCode {
         case 200: return try JSONDecoder().decode(LoginInfo.self, from: data)
         case 401: throw CrewDeckError.invalidLogin
+        case 429: throw CrewDeckError.rateLimited
+        default:  throw CrewDeckError.network
+        }
+    }
+
+    /// Native in-app registration (the website form's twin). Signs in too —
+    /// the session cookie arrives with the 201.
+    static func register(username: String, name: String, ship: String,
+                         embark: Date, disembark: Date, pin: String) async throws -> LoginInfo {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        let req = request("api/register", method: "POST", json: [
+            "username": username, "name": name, "ship": ship,
+            "embarkDate": f.string(from: embark),
+            "disembarkDate": f.string(from: disembark),
+            "pin": pin,
+        ])
+        let (data, response) = try await URLSession.shared.data(for: req)
+        switch (response as? HTTPURLResponse)?.statusCode {
+        case 201: return try JSONDecoder().decode(LoginInfo.self, from: data)
+        case 409: throw CrewDeckError.usernameTaken
+        case 400: throw CrewDeckError.badFields
+        case 429: throw CrewDeckError.rateLimited
         default:  throw CrewDeckError.network
         }
     }

@@ -13,6 +13,9 @@ struct SettingsView: View {
     @Environment(FleetData.self) var fleetData
     @Environment(\.dismiss) private var dismiss
 
+    /// Some seafarers on long contracts would rather not see "260 days to go".
+    @AppStorage("showCountdown") private var showCountdown = true
+
     // "Change ship" (guest mode): prefilled with the current setup on open.
     @State private var showChangeShip = false
     @State private var showFollowers = false
@@ -57,6 +60,15 @@ struct SettingsView: View {
                                           value: dateRangeText)
                             }
                             .glassEffect(.regular, in: .rect(cornerRadius: 20))
+                            .padding(.horizontal, 4)
+
+                            Toggle(isOn: $showCountdown) {
+                                Label("Show days remaining", systemImage: "calendar.badge.clock")
+                                    .foregroundStyle(Color.oceanInk)
+                            }
+                            .tint(.teal)
+                            .padding(.horizontal, 18).padding(.vertical, 12)
+                            .glassEffect(.regular, in: .rect(cornerRadius: 16))
                             .padding(.horizontal, 4)
 
                             // Crew self-declaration: unlocks berth/tender/clock info.

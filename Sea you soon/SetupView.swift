@@ -31,6 +31,16 @@ struct OnboardingView: View {
     @State private var guestEmbark = Date.now
     @State private var guestDisembark = Calendar.current.date(byAdding: .day, value: 7, to: .now) ?? .now
 
+    // Crew (register / sign in) state
+    @State private var crewName = ""
+    @State private var crewUsername = ""
+    @State private var crewPin = ""
+    @State private var crewSigningIn = false
+    @State private var crewBusy = false
+    @State private var crewError: String?
+    @State private var registeredName: String?   // non-nil → success step
+    @State private var showInviteSheet = false
+
     @State private var floatIcon = false
     @Namespace private var glassNamespace
 
@@ -42,7 +52,7 @@ struct OnboardingView: View {
                 case .none:    chooser
                 case .family:  familyForm
                 case .guest:   shipForm(crew: false)
-                case .crew:    shipForm(crew: true)
+                case .crew:    crewFlow
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
@@ -80,7 +90,7 @@ struct OnboardingView: View {
     private var chooser: some View {
         GlassEffectContainer(spacing: 24) {
             VStack(spacing: 18) {
-                Image(systemName: "ferry.fill")
+                CruiseLinerIcon()
                     .font(.system(size: 44))
                     .foregroundStyle(Color.oceanInk)
                     .frame(width: 96, height: 96)
@@ -90,14 +100,29 @@ struct OnboardingView: View {
                 Text("Sea You Soon")
                     .font(.heading(size: 34)).fontWeight(.bold)
                     .foregroundStyle(Color.oceanInk)
-                Text("Follow a voyage around the world")
+                Text("Follow a voyage around the world — or share your own")
                     .font(.callout).foregroundStyle(Color.oceanInk.opacity(0.85))
+                    .multilineTextAlignment(.center)
                     .padding(.bottom, 12)
 
                 choiceCard(
+                    tint: .indigo,
+                    title: "I'm a seafarer",
+                    subtitle: "Follow my own tour & share it with loved ones",
+                    action: {
+                        // Contract dates, not holiday dates: default to a
+                        // typical four-month tour so the picker starts close.
+                        guestEmbark = .now
+                        guestDisembark = Calendar.current.date(byAdding: .month, value: 4, to: .now) ?? .now
+                        withAnimation(.spring(duration: 0.4)) { mode = .crew }
+                    }
+                ) {
+                    Image(systemName: "person.badge.shield.checkmark.fill").font(.title3)
+                }
+                choiceCard(
                     tint: .pink,
-                    title: "Follow someone",
-                    subtitle: "A loved one sent you a code",
+                    title: "I've been invited",
+                    subtitle: "Follow a loved one with their code",
                     action: { withAnimation(.spring(duration: 0.4)) { mode = .family } }
                 ) {
                     Image(systemName: "heart.fill").font(.title2)
@@ -109,20 +134,6 @@ struct OnboardingView: View {
                     action: { withAnimation(.spring(duration: 0.4)) { mode = .guest } }
                 ) {
                     CruiseLinerIcon().frame(height: 18)
-                }
-                choiceCard(
-                    tint: .indigo,
-                    title: "I work on board",
-                    subtitle: "Berths, tender days & your followers",
-                    action: {
-                        // Contract dates, not holiday dates: default to a
-                        // typical four-month tour so the picker starts close.
-                        guestEmbark = .now
-                        guestDisembark = Calendar.current.date(byAdding: .month, value: 4, to: .now) ?? .now
-                        withAnimation(.spring(duration: 0.4)) { mode = .crew }
-                    }
-                ) {
-                    Image(systemName: "person.badge.shield.checkmark.fill").font(.title3)
                 }
 
                 Text("No account, no sign-up, nothing to allow. The app only knows the ships' schedules — never where you are.")
@@ -224,13 +235,13 @@ struct OnboardingView: View {
             && !isRedeeming
     }
 
-    // MARK: - Ship form (guest and crew share it; copy and defaults differ)
+    // MARK: - Ship form (guest)
 
     private func shipForm(crew: Bool) -> some View {
         ScrollView {
             GlassEffectContainer(spacing: 24) {
                 VStack(spacing: 18) {
-                    Text(crew ? "Your ship & contract" : "Follow a ship")
+                    Text("Follow a ship")
                         .font(.heading(size: 30)).fontWeight(.bold)
                         .foregroundStyle(Color.oceanInk).padding(.top, 20)
 
@@ -251,44 +262,238 @@ struct OnboardingView: View {
                     .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 16))
                     .padding(.horizontal, 4)
 
-                    dateTile(icon: "calendar",
-                             label: crew ? "Embark" : "From",
-                             selection: $guestEmbark, range: nil)
-                    dateTile(icon: "calendar.badge.checkmark",
-                             label: crew ? "Disembark" : "Until",
+                    dateTile(icon: "calendar", label: "From", selection: $guestEmbark, range: nil)
+                    dateTile(icon: "calendar.badge.checkmark", label: "Until",
                              selection: $guestDisembark, range: guestEmbark...)
 
-                    Text(crew
-                         ? "You'll get the crew view: planned berths, tender anchorages, clock changes and the Crew Portal.\n\nWant family to follow you, or to send them messages? Invite them from Settings → My followers & messages — all you need is a free Crew Deck account:"
-                         : "You'll see this ship's public itinerary — where it is today and tomorrow.")
+                    Text("You'll see this ship's public itinerary — where it is today and tomorrow.")
                         .font(.footnote).foregroundStyle(Color.oceanInk.opacity(0.7))
                         .multilineTextAlignment(.center).padding(.horizontal, 24)
-
-                    if crew {
-                        Link(destination: URL(string: "https://crew.oconnell-connect.com")!) {
-                            Label("crew.oconnell-connect.com", systemImage: "safari")
-                                .font(.footnote.weight(.semibold))
-                                .padding(.horizontal, 16).padding(.vertical, 10)
-                        }
-                        .buttonStyle(.glass).tint(.indigo)
-                        .foregroundStyle(Color.oceanInk)
-                    }
 
                     Button {
                         withAnimation {
                             crewSetup.configureGuest(ship: guestShip, embark: guestEmbark, disembark: guestDisembark)
-                            crewSetup.isCrew = crew
+                            crewSetup.isCrew = false
                             fleetData.apply(crewSetup)
                         }
                     } label: {
-                        Text(crew ? "Start my voyage" : "Start watching").fontWeight(.semibold)
+                        Text("Start watching").fontWeight(.semibold)
                             .frame(maxWidth: .infinity).padding(.vertical, 6)
                     }
-                    .buttonStyle(.glassProminent).tint(crew ? .indigo : .teal)
+                    .buttonStyle(.glassProminent).tint(.teal)
                     .disabled(guestDisembark < guestEmbark)
                     .padding(.horizontal, 24).padding(.top, 4)
                 }
                 .padding(.horizontal, 20).padding(.bottom, 30)
+            }
+        }
+    }
+
+    // MARK: - Crew flow (register or sign in, then a success step)
+
+    @ViewBuilder
+    private var crewFlow: some View {
+        if let registeredName {
+            crewSuccess(name: registeredName)
+        } else {
+            crewForm
+        }
+    }
+
+    private var crewForm: some View {
+        ScrollView {
+            GlassEffectContainer(spacing: 24) {
+                VStack(spacing: 18) {
+                    Text(crewSigningIn ? "Welcome back" : "Your ship & contract")
+                        .font(.heading(size: 30)).fontWeight(.bold)
+                        .foregroundStyle(Color.oceanInk).padding(.top, 20)
+
+                    if !crewSigningIn {
+                        glassField(icon: "person.fill", id: "crewname") {
+                            TextField("Your name", text: $crewName, prompt: prompt("Your name"))
+                                .textInputAutocapitalization(.words)
+                                .textContentType(.name)
+                        }
+
+                        Menu {
+                            ForEach(AidaShip.names, id: \.self) { ship in
+                                Button(ship) { guestShip = ship }
+                            }
+                        } label: {
+                            HStack(spacing: 12) {
+                                CruiseLinerIcon().frame(height: 14).foregroundStyle(Color.oceanInk.opacity(0.8))
+                                Text(guestShip).foregroundStyle(Color.oceanInk)
+                                Spacer()
+                                Image(systemName: "chevron.up.chevron.down").foregroundStyle(Color.oceanInk.opacity(0.6))
+                            }
+                            .padding(.horizontal, 18).padding(.vertical, 15)
+                        }
+                        .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 16))
+                        .padding(.horizontal, 4)
+
+                        dateTile(icon: "calendar", label: "Embark", selection: $guestEmbark, range: nil)
+                        dateTile(icon: "calendar.badge.checkmark", label: "Disembark",
+                                 selection: $guestDisembark, range: guestEmbark...)
+                    }
+
+                    glassField(icon: "at", id: "crewuser") {
+                        TextField("Username", text: $crewUsername, prompt: prompt("Choose a username"))
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                    }
+                    glassField(icon: "key.fill", id: "crewpin") {
+                        SecureField("PIN", text: $crewPin, prompt: prompt("PIN (at least 4 digits)"))
+                            .keyboardType(.numberPad)
+                    }
+
+                    if let crewError {
+                        Label(crewError, systemImage: "exclamationmark.triangle.fill")
+                            .font(.callout).foregroundStyle(.white)
+                            .padding(.horizontal, 18).padding(.vertical, 12)
+                            .glassEffect(.regular.tint(.red.opacity(0.55)), in: .rect(cornerRadius: 16))
+                    }
+
+                    if !crewSigningIn {
+                        Text("You'll get the crew view: planned berths, tender anchorages, clock changes and the Crew Portal — and you can invite loved ones to follow you.")
+                            .font(.footnote).foregroundStyle(Color.oceanInk.opacity(0.7))
+                            .multilineTextAlignment(.center).padding(.horizontal, 24)
+                    }
+
+                    Button {
+                        Task { crewSigningIn ? await crewSignIn() : await crewRegister() }
+                    } label: {
+                        HStack {
+                            if crewBusy { ProgressView().tint(.white) }
+                            else { Text(crewSigningIn ? "Sign in" : "Start my voyage").fontWeight(.semibold) }
+                        }
+                        .frame(maxWidth: .infinity).padding(.vertical, 6)
+                    }
+                    .buttonStyle(.glassProminent).tint(.indigo)
+                    .disabled(!canSubmitCrew)
+                    .padding(.horizontal, 24).padding(.top, 4)
+
+                    Button(crewSigningIn ? "New here? Create your account" : "Already registered? Sign in") {
+                        withAnimation(.spring(duration: 0.4)) {
+                            crewSigningIn.toggle()
+                            crewError = nil
+                        }
+                    }
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Color.oceanInk.opacity(0.8))
+
+                    Link(destination: URL(string: "https://crew.oconnell-connect.com")!) {
+                        Label("Prefer the website? crew.oconnell-connect.com", systemImage: "safari")
+                            .font(.footnote)
+                            .padding(.horizontal, 14).padding(.vertical, 8)
+                    }
+                    .buttonStyle(.glass).tint(.indigo)
+                    .foregroundStyle(Color.oceanInk.opacity(0.8))
+                }
+                .padding(.horizontal, 20).padding(.bottom, 30)
+            }
+        }
+        .scrollDismissesKeyboard(.interactively)
+    }
+
+    private var canSubmitCrew: Bool {
+        let userOK = !crewUsername.trimmingCharacters(in: .whitespaces).isEmpty
+        let pinOK = crewPin.trimmingCharacters(in: .whitespaces).count >= 4
+        if crewSigningIn { return userOK && pinOK && !crewBusy }
+        return userOK && pinOK && !crewBusy
+            && !crewName.trimmingCharacters(in: .whitespaces).isEmpty
+            && guestDisembark >= guestEmbark
+    }
+
+    /// The moment between "account created" and "show me my voyage": the one
+    /// natural opening to invite someone at home, so we offer it right here.
+    private func crewSuccess(name: String) -> some View {
+        VStack(spacing: 18) {
+            Image(systemName: "checkmark.seal.fill")
+                .font(.system(size: 44))
+                .foregroundStyle(.white)
+                .frame(width: 96, height: 96)
+                .glassEffect(.regular.tint(.teal.opacity(0.5)), in: .circle)
+
+            Text("Welcome aboard, \(name.split(separator: " ").first.map(String.init) ?? name)!")
+                .font(.heading(size: 28)).fontWeight(.bold)
+                .foregroundStyle(Color.oceanInk)
+                .multilineTextAlignment(.center)
+
+            Text("Your Crew Deck account is ready. Invite someone at home now — or head straight to your voyage. Inviting is always one tap away in Settings.")
+                .font(.newYork(size: 15)).foregroundStyle(Color.oceanInk.opacity(0.8))
+                .multilineTextAlignment(.center).padding(.horizontal, 24)
+
+            Button {
+                showInviteSheet = true
+            } label: {
+                Label("Invite someone now", systemImage: "heart.text.square")
+                    .fontWeight(.semibold)
+                    .frame(maxWidth: .infinity).padding(.vertical, 6)
+            }
+            .buttonStyle(.glassProminent).tint(.pink.opacity(0.7))
+            .padding(.horizontal, 24)
+
+            Button {
+                withAnimation {
+                    crewSetup.configureGuest(ship: guestShip, embark: guestEmbark, disembark: guestDisembark)
+                    crewSetup.isCrew = true
+                    fleetData.apply(crewSetup)
+                }
+            } label: {
+                Text("Show my voyage").fontWeight(.semibold)
+                    .frame(maxWidth: .infinity).padding(.vertical, 6)
+            }
+            .buttonStyle(.glassProminent).tint(.indigo)
+            .padding(.horizontal, 24)
+        }
+        .padding(.horizontal, 20)
+        .sheet(isPresented: $showInviteSheet) { FollowersView() }
+    }
+
+    private func crewRegister() async {
+        crewBusy = true
+        withAnimation { crewError = nil }
+        defer { crewBusy = false }
+        do {
+            let info = try await CrewDeck.register(
+                username: crewUsername.trimmingCharacters(in: .whitespaces),
+                name: crewName.trimmingCharacters(in: .whitespaces),
+                ship: guestShip, embark: guestEmbark, disembark: guestDisembark,
+                pin: crewPin.trimmingCharacters(in: .whitespaces))
+            UserDefaults.standard.set(info.name, forKey: "crewDeckName")
+            // The invite sheet can open before configureGuest runs — make sure
+            // the share text already names the right ship.
+            crewSetup.shipName = guestShip
+            withAnimation(.spring(duration: 0.4)) { registeredName = info.name }
+        } catch {
+            withAnimation {
+                crewError = (error as? CrewDeckError)?.errorDescription ?? error.localizedDescription
+            }
+        }
+    }
+
+    /// Returning crew (e.g. a reinstall): the server still knows their ship
+    /// and contract, so username + PIN restores everything.
+    private func crewSignIn() async {
+        crewBusy = true
+        withAnimation { crewError = nil }
+        defer { crewBusy = false }
+        do {
+            let info = try await CrewDeck.login(
+                username: crewUsername.trimmingCharacters(in: .whitespaces),
+                pin: crewPin.trimmingCharacters(in: .whitespaces))
+            UserDefaults.standard.set(info.name, forKey: "crewDeckName")
+            let iso = ISO8601DateFormatter()
+            let embark = info.embarkDate.flatMap { iso.date(from: $0) } ?? guestEmbark
+            let disembark = info.disembarkDate.flatMap { iso.date(from: $0) } ?? guestDisembark
+            withAnimation {
+                crewSetup.configureGuest(ship: info.ship, embark: embark, disembark: disembark)
+                crewSetup.isCrew = true
+                fleetData.apply(crewSetup)
+            }
+        } catch {
+            withAnimation {
+                crewError = (error as? CrewDeckError)?.errorDescription ?? error.localizedDescription
             }
         }
     }
