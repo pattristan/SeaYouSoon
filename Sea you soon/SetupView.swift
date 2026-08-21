@@ -190,7 +190,7 @@ struct OnboardingView: View {
                             .font(.system(.body, design: .monospaced))
                     }
 
-                    Text("Scan the QR your seafarer shows you — or type the code they sent. Each code works once.\n\nA code is their personal invitation: your seafarer always knows who's following and can stop sharing at any time.")
+                    Text("Scan the QR your seafarer shows you — or type the code they sent. Each code works once.\n\nA code is their personal invitation: your seafarer always knows who's following and can stop sharing at any time. They'll also see your local time, so they know when you're likely awake.")
                         .font(.footnote).foregroundStyle(Color.oceanInk.opacity(0.7))
                         .multilineTextAlignment(.center).padding(.horizontal, 24)
 

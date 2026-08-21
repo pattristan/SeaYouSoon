@@ -17,6 +17,9 @@ struct Follower: Codable, Identifiable {
     let watchId: String
     let watcherName: String
     let since: String
+    /// IANA identifier the follower's app reported (nil until it has) —
+    /// lets crew see the reader's local time while composing.
+    let timezone: String?
     var id: String { watchId }
 }
 
@@ -164,6 +167,16 @@ enum CrewDeck {
         case 401: throw CrewDeckError.notSignedIn
         default:  throw CrewDeckError.network
         }
+    }
+
+    /// Family side: report this device's timezone so the seafarer knows the
+    /// reader's local time when writing. Fire-and-forget; failure is fine.
+    static func reportTimezone(watchId: String) async {
+        let req = request("api/timezone", method: "POST", json: [
+            "watchId": watchId,
+            "timezone": TimeZone.current.identifier,
+        ])
+        _ = try? await URLSession.shared.data(for: req)
     }
 
     /// Family side — the watchId issued at pairing is the credential.

@@ -271,6 +271,14 @@ struct FollowersView: View {
             .foregroundStyle(Color.oceanInk)
 
             if composeFor?.watchId == follower.watchId {
+                // The reader's clock, at the moment of writing — so nobody
+                // wonders why there's no answer from someone fast asleep.
+                if let hint = localTimeHint(for: follower) {
+                    Label(hint, systemImage: "clock")
+                        .font(.footnote)
+                        .foregroundStyle(Color.oceanInk.opacity(0.7))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
                 HStack(spacing: 10) {
                     TextField("A short message to \(follower.watcherName)…",
                               text: $messageText, axis: .vertical)
@@ -290,6 +298,26 @@ struct FollowersView: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .glassEffect(.regular, in: .rect(cornerRadius: 18))
+    }
+
+    /// "For Jojo it's 03:12 — 6 hours behind you." Relative to this device,
+    /// which for crew on board runs on ship's time.
+    private func localTimeHint(for follower: Follower) -> String? {
+        guard let id = follower.timezone, let zone = TimeZone(identifier: id) else { return nil }
+        let fmt = DateFormatter()
+        fmt.timeZone = zone
+        fmt.timeStyle = .short
+        fmt.dateStyle = .none
+        let time = fmt.string(from: .now)
+        let seconds = zone.secondsFromGMT(for: .now) - TimeZone.current.secondsFromGMT(for: .now)
+        if abs(seconds) < 30 * 60 {
+            return "For \(follower.watcherName) it's \(time) — same time as you."
+        }
+        let hours = Double(abs(seconds)) / 3600
+        let count = hours == hours.rounded() ? String(format: "%.0f", hours) : String(format: "%.1f", hours)
+        let unit = hours == 1 ? "hour" : "hours"
+        let direction = seconds < 0 ? "behind" : "ahead of"
+        return "For \(follower.watcherName) it's \(time) — \(count) \(unit) \(direction) you."
     }
 
     // MARK: - Field helper

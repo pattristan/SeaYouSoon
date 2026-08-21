@@ -34,10 +34,12 @@ struct Sea_you_soonApp: App {
                             // Family mode: adopt contract changes (extended
                             // tours, ship swaps) made on Crew Deck since the
                             // original pairing. Silent when offline.
-                            if !crewSetup.isGuest, !crewSetup.watchId.isEmpty,
-                               let profile = try? await CrewDeck.familyProfile(watchId: crewSetup.watchId),
-                               crewSetup.sync(with: profile) {
-                                fleetData.apply(crewSetup)
+                            if !crewSetup.isGuest, !crewSetup.watchId.isEmpty {
+                                await CrewDeck.reportTimezone(watchId: crewSetup.watchId)
+                                if let profile = try? await CrewDeck.familyProfile(watchId: crewSetup.watchId),
+                                   crewSetup.sync(with: profile) {
+                                    fleetData.apply(crewSetup)
+                                }
                             }
                         }
 
