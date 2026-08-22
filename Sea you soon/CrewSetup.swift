@@ -84,6 +84,7 @@ class CrewSetup {
         previousShip = defaults.string(forKey: "previousShip")
         previousEmbark = defaults.object(forKey: "previousEmbark") as? Date
         previousDisembark = defaults.object(forKey: "previousDisembark") as? Date
+        previousCrewName = defaults.string(forKey: "previousCrewName")
     }
 
     /// First name only, for friendly sentences ("Where is Jojo today?").
@@ -124,10 +125,32 @@ class CrewSetup {
         return true
     }
 
+    /// A curious look at another ship WITHOUT giving anything up: the way
+    /// back (guest ship or paired person) is remembered, and the pairing
+    /// credentials stay untouched — peeking must never cost a new code.
+    func peekAtShip(ship: String, embark: Date, disembark: Date) {
+        previousShip = shipName
+        previousEmbark = embarkDate
+        previousDisembark = disembarkDate
+        previousCrewName = isGuest ? nil : crewName
+        isGuest = true
+        shipName = ship
+        embarkDate = embark
+        disembarkDate = disembark
+    }
+
     /// Follow a ship's public itinerary (guest mode — no person, no code).
     /// Switching away from an existing guest setup remembers it, so a quick
     /// look at a job offer's route is one tap away from home again.
     func configureGuest(ship: String, embark: Date, disembark: Date) {
+        if previousCrewName != nil {
+            // Mid-peek from a pairing: hopping to yet another ship must keep
+            // both the credentials and the way back to the person.
+            shipName = ship
+            embarkDate = embark
+            disembarkDate = disembark
+            return
+        }
         if isConfigured && isGuest && ship != shipName {
             previousShip = shipName
             previousEmbark = embarkDate
@@ -156,9 +179,16 @@ class CrewSetup {
         didSet { UserDefaults.standard.set(previousDisembark, forKey: "previousDisembark") }
     }
 
+    /// Non-nil while peeking away from a paired person: their name, which
+    /// doubles as the marker that "the way back" restores family mode.
+    var previousCrewName: String? {
+        didSet { UserDefaults.standard.set(previousCrewName, forKey: "previousCrewName") }
+    }
+
     var hasPreviousShip: Bool { isGuest && previousShip != nil }
 
-    /// One tap back to the ship watched before the last "Change ship".
+    /// One tap back to what was watched before the peek — the previous ship,
+    /// or the paired person (family mode restored, credentials intact).
     func returnToPreviousShip() {
         guard let ship = previousShip,
               let embark = previousEmbark,
@@ -166,6 +196,10 @@ class CrewSetup {
         shipName = ship
         embarkDate = embark
         disembarkDate = disembark
+        if let person = previousCrewName {
+            crewName = person
+            isGuest = false
+        }
         clearPreviousShip()
     }
 
@@ -173,6 +207,7 @@ class CrewSetup {
         previousShip = nil
         previousEmbark = nil
         previousDisembark = nil
+        previousCrewName = nil
     }
 
     /// Forget the current setup (returns the app to onboarding).

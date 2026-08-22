@@ -13,6 +13,11 @@ struct ReturnShipChip: View {
     @Environment(CrewSetup.self) var crewSetup
     @Environment(FleetData.self) var fleetData
 
+    /// First name when the way back is a paired person, nil for a guest ship.
+    private var backToPerson: String? {
+        crewSetup.previousCrewName.map { $0.split(separator: " ").first.map(String.init) ?? $0 }
+    }
+
     var body: some View {
         if let previous = crewSetup.previousShip, crewSetup.hasPreviousShip {
             HStack(spacing: 4) {
@@ -22,21 +27,28 @@ struct ReturnShipChip: View {
                         fleetData.apply(crewSetup)
                     }
                 } label: {
-                    Label("Return to \(previous)", systemImage: "arrow.uturn.backward")
+                    Label(backToPerson.map { "Back to \($0)" } ?? "Return to \(previous)",
+                          systemImage: "arrow.uturn.backward")
                         .font(.footnote)
                         .fontWeight(.semibold)
                         .padding(.leading, 14)
                         .padding(.vertical, 9)
                 }
-                Button {
-                    withAnimation(.spring(duration: 0.4)) {
-                        crewSetup.clearPreviousShip()
+                // Guests may adopt the new ship; the way back to a paired
+                // PERSON is too precious for a mis-tap — family ends a
+                // pairing deliberately, via Settings.
+                if backToPerson == nil {
+                    Button {
+                        withAnimation(.spring(duration: 0.4)) {
+                            crewSetup.clearPreviousShip()
+                        }
+                    } label: {
+                        Text("Stay")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .padding(.trailing, 14)
+                            .padding(.vertical, 9)
                     }
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.caption2)
-                        .padding(.trailing, 14)
-                        .padding(.vertical, 9)
                 }
             }
             .foregroundStyle(Color.oceanInk)

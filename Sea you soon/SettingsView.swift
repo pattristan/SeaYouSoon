@@ -98,25 +98,25 @@ struct SettingsView: View {
                                 .padding(.horizontal, 24)
                             }
 
-                            // Guest mode: switch ship/dates without starting over —
-                            // e.g. a seafarer checking the route of a new offer.
-                            if crewSetup.isGuest {
-                                if showChangeShip {
-                                    changeShipCard
-                                } else {
-                                    Button {
-                                        newShip = crewSetup.shipName
-                                        newEmbark = crewSetup.embarkDate
-                                        newDisembark = crewSetup.disembarkDate
-                                        withAnimation(.spring(duration: 0.4)) { showChangeShip = true }
-                                    } label: {
-                                        Label("Change ship", systemImage: "arrow.triangle.2.circlepath")
-                                            .fontWeight(.semibold)
-                                            .frame(maxWidth: .infinity).padding(.vertical, 6)
-                                    }
-                                    .buttonStyle(.glassProminent).tint(.teal)
-                                    .padding(.horizontal, 24).padding(.top, 8)
+                            // Switch/peek at another ship without starting over.
+                            // Guests change ship; family peek out of curiosity —
+                            // the pairing survives, a chip offers the way back.
+                            if showChangeShip {
+                                changeShipCard
+                            } else {
+                                Button {
+                                    newShip = crewSetup.shipName
+                                    newEmbark = crewSetup.embarkDate
+                                    newDisembark = crewSetup.disembarkDate
+                                    withAnimation(.spring(duration: 0.4)) { showChangeShip = true }
+                                } label: {
+                                    Label(crewSetup.isGuest ? "Change ship" : "Quick look at another ship",
+                                          systemImage: crewSetup.isGuest ? "arrow.triangle.2.circlepath" : "binoculars.fill")
+                                        .fontWeight(.semibold)
+                                        .frame(maxWidth: .infinity).padding(.vertical, 6)
                                 }
+                                .buttonStyle(.glassProminent).tint(.teal)
+                                .padding(.horizontal, 24).padding(.top, 8)
                             }
 
                             Button(role: .destructive) {
@@ -186,7 +186,11 @@ struct SettingsView: View {
                 .buttonStyle(.glass)
 
                 Button {
-                    crewSetup.configureGuest(ship: newShip, embark: newEmbark, disembark: newDisembark)
+                    if crewSetup.isGuest {
+                        crewSetup.configureGuest(ship: newShip, embark: newEmbark, disembark: newDisembark)
+                    } else {
+                        crewSetup.peekAtShip(ship: newShip, embark: newEmbark, disembark: newDisembark)
+                    }
                     fleetData.apply(crewSetup)
                     dismiss()
                 } label: {
