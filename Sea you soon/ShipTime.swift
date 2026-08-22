@@ -73,6 +73,45 @@ enum ShipTime {
         return "(\(s.text) – \(e.text)\(marker) your time)"
     }
 
+    /// Where in today's port call are we, by the port's own clock?
+    /// "In Aberdeen 07:00-19:00" is only true between 07:00 and 19:00 —
+    /// before that the ship is still approaching, after it she has sailed.
+    enum CallStatus {
+        case beforeArrival(eta: String)
+        case inPort
+        case departed
+    }
+
+    /// Nil when the times aren't plain HH:mm (e.g. "Overnight") — then we
+    /// can't judge, and the existing display stays as it is.
+    static func callStatus(for finding: Finding) -> CallStatus? {
+        guard !finding.isAtSea else { return nil }
+        let parts = finding.fromTill.components(separatedBy: " - ")
+        guard parts.count == 2,
+              let start = parseMinutes(parts[0]),
+              let end = parseMinutes(parts[1]),
+              start <= end else { return nil }
+
+        let utcMinutes = Calendar.current.component(.hour, from: .now) * 60
+            + Calendar.current.component(.minute, from: .now)
+            - TimeZone.current.secondsFromGMT() / 60
+        var portNow = (utcMinutes + timezoneOffset(for: finding) * 60) % 1440
+        if portNow < 0 { portNow += 1440 }
+
+        if portNow < start { return .beforeArrival(eta: parts[0].trimmingCharacters(in: .whitespaces)) }
+        if portNow > end { return .departed }
+        return .inPort
+    }
+
+    /// One clock instead of a range: "07:00" -> "(13:00 your time)".
+    static func viewerClock(_ hhmm: String, for finding: Finding) -> String? {
+        let shift = TimeZone.current.secondsFromGMT() / 60 - timezoneOffset(for: finding) * 60
+        guard abs(shift) >= 60, let minutes = parseMinutes(hhmm) else { return nil }
+        var m = (minutes + shift) % 1440
+        if m < 0 { m += 1440 }
+        return String(format: "(%02d:%02d your time)", m / 60, m % 60)
+    }
+
     /// "10:00" -> 600. Nil for tokens like "Overnight".
     static func parseMinutes(_ hhmm: String) -> Int? {
         let bits = hhmm.trimmingCharacters(in: .whitespaces).components(separatedBy: ":")

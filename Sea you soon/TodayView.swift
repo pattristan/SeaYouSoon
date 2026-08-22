@@ -13,6 +13,7 @@ struct TodayView: View {
     @Environment(FleetData.self) var fleetData
     @Environment(CrewSetup.self) var crewSetup
     @Environment(WeatherService.self) var weatherService
+    @Environment(ShipPositionService.self) var shipPositions
     @Environment(WikipediaImageLoader.self) private var imageLoader: WikipediaImageLoader?
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.scenePhase) private var scenePhase
@@ -135,10 +136,20 @@ struct TodayView: View {
 
     // MARK: - Coordinates (interpolated on sea days)
 
-    /// The feed's sea-day coordinates are route-aware (via maritime gates in
-    /// the importer), so the feed is the single source of truth for position.
+    /// A live position we trust for the displayed day: only while genuinely
+    /// aboard (the row IS today), the right ship, and fresh (<45 min).
+    private var livePosition: LivePosition? {
+        guard phase == .aboard else { return nil }
+        return shipPositions.fresh(for: crewSetup.shipName)
+    }
+
+    /// Position for weather & co: the live feed when fresh, otherwise the
+    /// itinerary's route-aware coordinates (the offline backbone).
     private var estimatedCoordinates: Finding.Coordinates {
-        currentFinding?.coordinates ?? Finding.Coordinates(latitude: 0, longitude: 0)
+        if let live = livePosition {
+            return Finding.Coordinates(latitude: live.latitude, longitude: live.longitude)
+        }
+        return currentFinding?.coordinates ?? Finding.Coordinates(latitude: 0, longitude: 0)
     }
 
     // MARK: - Countdown
@@ -325,7 +336,12 @@ struct TodayView: View {
                 weatherSheet.presentationDetents([.height(360)])
             }
             .onAppear { getTheDay() }
-            .onChange(of: scenePhase) { if scenePhase == .active { getTheDay() } }
+            .onChange(of: scenePhase) {
+                if scenePhase == .active {
+                    getTheDay()
+                    Task { await shipPositions.refresh() }
+                }
+            }
             .onChange(of: fleetData.findings) { getTheDay() }
             .task(id: currentFinding?.id) {
                 let coords = estimatedCoordinates
@@ -376,6 +392,17 @@ struct TodayView: View {
                                                 Text(hint)
                                                     .font(.newYork(size: isRegular ? 14 : 12))
                                                     .opacity(0.65)
+                                            }
+
+                                            // The strict truth: outside the port hours the
+                                            // ship is approaching or has already sailed.
+                                            if let status = callStatusLine(for: current) {
+                                                Text(status)
+                                                    .font(.newYork(size: isRegular ? 15 : 13))
+                                                    .fontWeight(.medium)
+                                                    .opacity(0.85)
+                                                    .multilineTextAlignment(.center)
+                                                    .padding(.top, 2)
                                             }
                                         }
 
@@ -771,6 +798,25 @@ struct TodayView: View {
         return crewSetup.isGuest ? "Counting down to your departure." : "Treasure the days before the next voyage."
     }
 
+    /// "Patrick is in Aberdeen 07:00-19:00" is only true during the call.
+    /// Before: he's still approaching. After: already at sea towards the next
+    /// port — vital for families judging when a seafarer has time to talk.
+    private func callStatusLine(for finding: Finding) -> String? {
+        switch ShipTime.callStatus(for: finding) {
+        case .none, .inPort:
+            return nil
+        case .beforeArrival(let eta):
+            let viewer = ShipTime.viewerClock(eta, for: finding).map { " \($0)" } ?? ""
+            return "Still at sea — arriving \(eta)\(viewer)"
+        case .departed:
+            if let idx = fleetData.findings.firstIndex(where: { $0.id == finding.id }),
+               let next = fleetData.findings[(idx + 1)...].first(where: { !$0.isAtSea }) {
+                return "Already sailed — on the way to \(next.location)"
+            }
+            return "Already sailed"
+        }
+    }
+
     private func getTheDay() {
         if let index = fleetData.findings.firstIndex(where: { $0.OnThisDay == todayFormatted }) {
             currentIndex = index
@@ -803,6 +849,7 @@ struct TodayView: View {
         .environment(setup)
         .environment(WeatherService())
         .environment(WikipediaImageLoader())
+        .environment(ShipPositionService())
 }
 
 #Preview("At home") {
@@ -819,4 +866,5 @@ struct TodayView: View {
         .environment(setup)
         .environment(WeatherService())
         .environment(WikipediaImageLoader())
+        .environment(ShipPositionService())
 }
