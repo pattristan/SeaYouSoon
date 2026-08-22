@@ -15,8 +15,25 @@ struct DestinationDetailView: View {
     @Environment(WikipediaImageLoader.self) private var imageLoader: WikipediaImageLoader?
     @Environment(FleetData.self) var fleetData
     @Environment(CrewSetup.self) var crewSetup
+    @Environment(ShipPositionService.self) var shipPositions
 
     let finding: Finding
+
+    /// Today's row shows the ship where she ACTUALLY is, when we know it —
+    /// live feed position, fresh within 45 minutes. Other days (and stale
+    /// data) use the itinerary's route-aware coordinates.
+    private var livePosition: LivePosition? {
+        let today = DateFormatter()
+        today.dateFormat = "dd.MM.yyyy"
+        guard finding.OnThisDay == today.string(from: .now),
+              let ship = finding.ship else { return nil }
+        return shipPositions.fresh(for: ship)
+    }
+
+    private var displayCoordinate: CLLocationCoordinate2D {
+        livePosition.map { CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) }
+            ?? finding.locationCoordinate
+    }
 
     private let ringGray = Color(red: 0.7, green: 0.7, blue: 0.7).opacity(0.3)
 
@@ -49,12 +66,23 @@ struct DestinationDetailView: View {
 
             ScrollView {
                 VStack(spacing: 0) {
-                    MapView(coordinate: finding.locationCoordinate,
+                    MapView(coordinate: displayCoordinate,
                             markerTitle: finding.ship ?? "")
                         .frame(height: horizontalSizeClass == .regular ? 400 : 300)
                         .clipShape(RoundedRectangle(cornerRadius: 17))
                         .shadow(color: .black.opacity(0.2), radius: 10, y: 5)
                         .padding(.horizontal, 16)
+                        .overlay(alignment: .topTrailing) {
+                            if let live = livePosition {
+                                Label("Live · \(live.timestamp.formatted(date: .omitted, time: .shortened))",
+                                      systemImage: "dot.radiowaves.left.and.right")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(Color.oceanInk)
+                                    .padding(.horizontal, 10).padding(.vertical, 6)
+                                    .glassEffect(.regular.tint(.teal.opacity(0.4)), in: .capsule)
+                                    .padding(.top, 10).padding(.trailing, 26)
+                            }
+                        }
 
                     // Classic circular medallion for ports AND sea days — sea
                     // days use the plain "NP" photo here (the porthole lives on
@@ -82,8 +110,8 @@ struct DestinationDetailView: View {
                                 // Open Maps showing the ship's position as a named
                                 // pin — not directions from the viewer (who may be
                                 // an ocean away). Maps offers directions on demand.
-                                let location = CLLocation(latitude: finding.locationCoordinate.latitude,
-                                                          longitude: finding.locationCoordinate.longitude)
+                                let location = CLLocation(latitude: displayCoordinate.latitude,
+                                                          longitude: displayCoordinate.longitude)
                                 let item = MKMapItem(location: location, address: nil)
                                 let place = finding.isAtSea ? "at sea" : finding.location
                                 item.name = finding.ship.map { "\($0) — \(place)" } ?? place
@@ -142,4 +170,5 @@ struct DestinationDetailView: View {
     .environment(FleetData())
     .environment(CrewSetup())
     .environment(WikipediaImageLoader())
+    .environment(ShipPositionService())
 }

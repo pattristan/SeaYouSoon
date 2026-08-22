@@ -11,6 +11,7 @@ struct Sea_you_soonApp: App {
     @State private var crewSetup = CrewSetup()
     @State private var imageLoader = WikipediaImageLoader()
     @State private var weatherService = WeatherService()
+    @State private var shipPositions = ShipPositionService()
 
     // The splash is a welcome, not a toll booth: it plays on the very first
     // launch only, then never again (persisted, so cold starts skip it too).
@@ -26,11 +27,13 @@ struct Sea_you_soonApp: App {
                         .environment(crewSetup)
                         .environment(imageLoader)
                         .environment(weatherService)
+                        .environment(shipPositions)
                         .onAppear { fleetData.apply(crewSetup) }
                         .task {
                             // Pick up a freshly published feed (FTP'd after an
                             // MXP re-import) without an App Store release.
                             await fleetData.refreshFromRemote(applying: crewSetup)
+                            await shipPositions.refresh()
                             // Family mode: adopt contract changes (extended
                             // tours, ship swaps) made on Crew Deck since the
                             // original pairing. Silent when offline.
